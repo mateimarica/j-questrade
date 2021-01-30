@@ -7,7 +7,7 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 
-public class Request {
+class Request {
 	
 	private String accessToken;
 	
@@ -56,7 +56,7 @@ public class Request {
 		}
 		
 		connection.setRequestMethod(requestMethod);
-		
+			
 		System.out.println("URL = " + URL);
 		return connection;
 	}

@@ -7,13 +7,19 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.function.Consumer;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
-import com.jquestrade.exceptions.BadRefreshTokenException;
+import com.jquestrade.exceptions.RefreshTokenException;
+import com.jquestrade.exceptions.StatusCodeException;
+import com.jquestrade.exceptions.RefreshTokenException;
 
+/** Questrade API object */
 public class QuestradeAPI {
+	
+	private final DateTimeFormatter isoFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ssXXX");
 	
 	private Authorization authorization;
 	private Consumer<Authorization> authRelayFunction = null;
@@ -29,19 +35,20 @@ public class QuestradeAPI {
 	}
 	
 	/** Starts up the API by exchanging the refresh token for an access token. 
-	 * @throws BadRefreshTokenException */
-	public QuestradeAPI activate() throws BadRefreshTokenException {
+	 * @throws RefreshTokenException */
+	public QuestradeAPI activate() throws RefreshTokenException {
 		if(startingRefreshToken != null) {
 			retrieveAccessToken(startingRefreshToken);
 			startingRefreshToken = null;
 		}
 		return this;
 	}
+	
 	/** Doesn't work. Don't know why.
-	 * @throws BadRefreshTokenException
+	 * @throws RefreshTokenException
 	 */
 	@Deprecated
-	public void revokeAuthorization() throws BadRefreshTokenException {
+	public void revokeAuthorization() throws RefreshTokenException {
 		String URL = "https://login.questrade.com/oauth2/revoke";
 		
 		Request request = new Request(URL);
@@ -53,7 +60,7 @@ public class QuestradeAPI {
 	}
 	
 	
-	public void retrieveAccessToken(String refreshToken) throws BadRefreshTokenException {		
+	public void retrieveAccessToken(String refreshToken) throws RefreshTokenException {		
 		String URL = "https://login.questrade.com/oauth2/token?grant_type=refresh_token&refresh_token=" + refreshToken;
 		
 		Request request = new Request(URL);
@@ -71,7 +78,7 @@ public class QuestradeAPI {
 		
 	}	
 	
-	public void retrieveAccessToken() throws BadRefreshTokenException{
+	public void retrieveAccessToken() throws RefreshTokenException{
 		retrieveAccessToken(authorization.getRefreshToken());
 	}
 
@@ -86,7 +93,7 @@ public class QuestradeAPI {
 	
 	
 	
-	public Account[] getAccounts() throws BadRefreshTokenException {
+	public Account[] getAccounts() throws RefreshTokenException {
 		String URL = authorization.getApiServer() + "v1/accounts/";
 		
 		Request request = new Request(URL);
@@ -101,7 +108,7 @@ public class QuestradeAPI {
 		return accounts.getAccounts();
 	}
 	
-	public ZonedDateTime getTime() throws BadRefreshTokenException {
+	public ZonedDateTime getTime() throws RefreshTokenException {
 		String URL = authorization.getApiServer() + "v1/time";
 		
 		Request request = new Request(URL);
@@ -114,17 +121,49 @@ public class QuestradeAPI {
 		return ZonedDateTime.parse(timeISO);
 	}
 	
+	public Activity[] getActivities(String accountNumber, ZonedDateTime startTime, ZonedDateTime endTime) throws RefreshTokenException {
+		String URL = authorization.getApiServer() + "v1/accounts/" + accountNumber + "/activities";
+		
+		Request request = new Request(URL);
+		request.setRequestMethod(RequestMethod.GET);
+		request.setAccessToken(authorization.getAccessToken());
+		request.addParameter("startTime", startTime.format(isoFormatter));
+		request.addParameter("endTime", endTime.format(isoFormatter));
+		
+		String activitiesJSON = connectToURL(request);
+		
+		Activities activities = new Gson().fromJson(activitiesJSON, Activities.class);
+		
+		return activities.getActivities();
+	}	
+	
+	public Execution[] getExecutions(String accountNumber, ZonedDateTime startTime, ZonedDateTime endTime) throws RefreshTokenException {
+		String URL = authorization.getApiServer() + "v1/accounts/" + accountNumber + "/executions";
+		
+		Request request = new Request(URL);
+		request.setRequestMethod(RequestMethod.GET);
+		request.setAccessToken(authorization.getAccessToken());
+		request.addParameter("startTime", startTime.format(isoFormatter));
+		request.addParameter("endTime", endTime.format(isoFormatter));
+		
+		String executionsJSON = connectToURL(request);
+
+		Executions executions = new Gson().fromJson(executionsJSON, Executions.class);
+		
+		return executions.getExecutions();
+	}	
+	
 	/**
      * Connect to a URL that doesn't require an access token.
      * @param URLIn The URL that is to be connected to.
      * @return Returns a reference to the BufferedReader from info can be read from.
-     * @throws BadResponseCodeException If the website's response code is not 200 (200 = OK)
+     * @throws ResponseCodeException If the website's response code is not 200 (200 = OK)
      */
-    /*private String connectToURL(RequestMethod requestMethod, String URLIn, HttpParameter ...params) throws BadRefreshTokenException {
+    /*private String connectToURL(RequestMethod requestMethod, String URLIn, HttpParameter ...params) throws RefreshTokenException {
         return connectToURL(requestMethod, URLIn, null, params);
     }
 	
-    private String connectToURL(RequestMethod requestMethod, String URLIn, String accessToken, HttpParameter ...params) throws BadRefreshTokenException {
+    private String connectToURL(RequestMethod requestMethod, String URLIn, String accessToken, HttpParameter ...params) throws RefreshTokenException {
     	return null;
     }*/
 	/**
@@ -134,47 +173,48 @@ public class QuestradeAPI {
      * @param startTime Start of time range in ISO format. By default – start of today, 12:00am. Eg of date: startTime=2020-08-23T21:14:07+00:00
      * @param endTime End of time range in ISO format. By default – end of today, 11:59pm
      * @return Returns a reference to the BufferedReader from info can be read from.
-	 * @throws BadRefreshTokenException 
+	 * @throws RefreshTokenException 
      */
-    private String connectToURL(Request request) throws BadRefreshTokenException {
+    private String connectToURL(Request request) throws RefreshTokenException {
 
         try {
 
             HttpURLConnection connection = request.getConnection();
             
-            int responseCode = 400;
+            int statusCode = connection.getResponseCode();
             
-            try {
-            	responseCode = connection.getResponseCode();
-            } catch (java.net.UnknownHostException e){
-            	e.printStackTrace();
+       
+            //java.net.UnknownHostException e
+            
+            
+            System.out.println("responseCode=" + statusCode + "\n");
+            if(statusCode == 400) {
+            	throw new RefreshTokenException("Error code " + statusCode + "was returned. Assuming refresh token is invalid.");
             }
             
+            BufferedReader in = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+            String responseJSON = in.readLine();
+            connection.disconnect();
             
-            System.out.println("responseCode=" + responseCode + "\n");
-            if(responseCode == 400) {
-            	throw new BadRefreshTokenException("Error code " + responseCode + "was returned. Assuming refresh token is invalid.");
-            }
+            
             
             // Response codes in the 200s are "successful"
-            /*if (responseCode > 299 || responseCode < 200) {
-            	//int errorCode = new Gson().fromJson(responseJSON, int.class);
-            	/*int errorCode = new Gson().fromJson("", int.class);
+            if (statusCode > 299 || statusCode < 200) {
+            	int errorCode = new Gson().fromJson(responseJSON, int.class);
             	
             	// Error code 1017 means access token is invalid or expired
             	if(errorCode == 1017) {
             		retrieveAccessToken(authorization.getRefreshToken()); // get new access token
-            		return connectToURL(requestMethod, URLIn, authorization.getAccessToken(), params);
-            	}*/
+            		request.setAccessToken(authorization.getAccessToken());
+            		return connectToURL(request);
+            	}
             	
             	
-            	//return null;
-            //}
+            	throw new StatusCodeException("A bad status code was returned: " + statusCode, statusCode);
+            }
             
-            BufferedReader in = new BufferedReader(new InputStreamReader(connection.getInputStream()));
             
-            String responseJSON = in.readLine();
-
+            
             return responseJSON;
             
         } catch(IOException e) {

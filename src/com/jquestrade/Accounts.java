@@ -1,6 +1,6 @@
 package com.jquestrade;
 
-public class Accounts {
+class Accounts {
 	private Account[] accounts;
 	
 	public Account[] getAccounts() {

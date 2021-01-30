@@ -1,6 +1,9 @@
 package com.jquestrade;
 
 public class Account {
+	
+	private Account() {}
+	
 	private String type;
 	private String number;
 	private String status;

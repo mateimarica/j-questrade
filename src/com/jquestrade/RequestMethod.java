@@ -1,6 +1,6 @@
 package com.jquestrade;
 
-public class RequestMethod {
+class RequestMethod {
 	public static final String GET = "GET";
 	public static final String POST = "POST";
 }

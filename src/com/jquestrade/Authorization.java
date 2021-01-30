@@ -1,6 +1,9 @@
 package com.jquestrade;
 
 public class Authorization {
+	
+	private Authorization() {}
+	
 	private String access_token;
 	
 	private String api_server;
