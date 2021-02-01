@@ -27,9 +27,24 @@ class Request {
 		this.requestMethod = requestMethod;
 	}
 	
-	public void addParameter(String key, String value) {
+	public void addParameter(String key, String[] values) {
+		URL += ((parameterCount == 0) ? "?" : "&")
+			+ key + "=" + values[0];
+		
+		for(int i = 1; i < values.length; i++) {
+			URL += "," + values[i];
+		}
+		
+		parameterCount++;
+	}
+	
+	public void addParameter(String key, String value, String ...values) {
 		URL += ((parameterCount == 0) ? "?" : "&")
 			+ key + "=" + value;
+		
+		for(int i = 0; i < values.length; i++) {
+			URL += "," + values[i];
+		}
 		
 		parameterCount++;
 	}
@@ -57,7 +72,7 @@ class Request {
 		
 		connection.setRequestMethod(requestMethod);
 			
-		System.out.println("URL = " + URL);
+		//System.out.println("URL = " + URL);
 		return connection;
 	}
 	

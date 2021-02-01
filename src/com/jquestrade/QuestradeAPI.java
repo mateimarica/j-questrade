@@ -4,23 +4,20 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.function.Consumer;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
+import com.jquestrade.Balances.Currency;
 import com.jquestrade.exceptions.RefreshTokenException;
 import com.jquestrade.exceptions.StatusCodeException;
-import com.jquestrade.exceptions.RefreshTokenException;
 
 /** Questrade API object */
 public class QuestradeAPI {
 	
 	private final DateTimeFormatter isoFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ssXXX");
-	
 	private Authorization authorization;
 	private Consumer<Authorization> authRelayFunction = null;
 	
@@ -29,7 +26,7 @@ public class QuestradeAPI {
 	 */
 	private String startingRefreshToken;
 	
-	/** Create a Questrade API object to */
+	/** Create a Questrade API object  */
 	public QuestradeAPI(String refreshToken) {
 		this.startingRefreshToken = refreshToken;
 	}
@@ -60,7 +57,7 @@ public class QuestradeAPI {
 	}
 	
 	
-	public void retrieveAccessToken(String refreshToken) throws RefreshTokenException {		
+	public void retrieveAccessToken(String refreshToken) throws RefreshTokenException, StatusCodeException {		
 		String URL = "https://login.questrade.com/oauth2/token?grant_type=refresh_token&refresh_token=" + refreshToken;
 		
 		Request request = new Request(URL);
@@ -78,7 +75,7 @@ public class QuestradeAPI {
 		
 	}	
 	
-	public void retrieveAccessToken() throws RefreshTokenException{
+	public void retrieveAccessToken() throws RefreshTokenException, StatusCodeException {
 		retrieveAccessToken(authorization.getRefreshToken());
 	}
 
@@ -91,9 +88,25 @@ public class QuestradeAPI {
 		return this;
 	}
 	
+	public Balances getBalances(String accountNumber) throws StatusCodeException, RefreshTokenException {
+		String URL = authorization.getApiServer() + "v1/accounts/" + accountNumber + "/balances";
+		
+		Request request = new Request(URL);
+		request.setAccessToken(authorization.getAccessToken());
+		request.setRequestMethod(RequestMethod.GET);
+		
+		String balancesJSON = connectToURL(request);
+		
+		Balances balance = new Gson().fromJson(balancesJSON, Balances.class);
+		
+		return balance;
+	}
 	
 	
-	public Account[] getAccounts() throws RefreshTokenException {
+
+	
+	private class Accounts { private Account[] accounts; }
+	public Account[] getAccounts() throws RefreshTokenException, StatusCodeException {
 		String URL = authorization.getApiServer() + "v1/accounts/";
 		
 		Request request = new Request(URL);
@@ -102,15 +115,16 @@ public class QuestradeAPI {
 		
 		String accountsJSON = connectToURL(request);
 		
-		//String accs = "{\"accounts\":[{\"type\":\"TFSA\",\"number\":\"52241053\",\"status\":\"Active\",\"isPrimary\":true,\"isBilling\":true,\"clientAccountType\":\"Individual\"}],\"userId\":1006658}";
+		
+		
 		Accounts accounts = new Gson().fromJson(accountsJSON, Accounts.class);
 		
-		return accounts.getAccounts();
+		return accounts.accounts;
 	}
 	
-	public ZonedDateTime getTime() throws RefreshTokenException {
+	public ZonedDateTime getTime() throws RefreshTokenException, StatusCodeException {
 		String URL = authorization.getApiServer() + "v1/time";
-		
+
 		Request request = new Request(URL);
 		request.setRequestMethod(RequestMethod.GET);
 		request.setAccessToken(authorization.getAccessToken());
@@ -121,7 +135,8 @@ public class QuestradeAPI {
 		return ZonedDateTime.parse(timeISO);
 	}
 	
-	public Activity[] getActivities(String accountNumber, ZonedDateTime startTime, ZonedDateTime endTime) throws RefreshTokenException {
+	private class Activities { private Activity[] activities; }
+	public Activity[] getActivities(String accountNumber, ZonedDateTime startTime, ZonedDateTime endTime) throws RefreshTokenException, StatusCodeException {
 		String URL = authorization.getApiServer() + "v1/accounts/" + accountNumber + "/activities";
 		
 		Request request = new Request(URL);
@@ -131,13 +146,14 @@ public class QuestradeAPI {
 		request.addParameter("endTime", endTime.format(isoFormatter));
 		
 		String activitiesJSON = connectToURL(request);
-		
+	
 		Activities activities = new Gson().fromJson(activitiesJSON, Activities.class);
 		
-		return activities.getActivities();
+		return activities.activities;
 	}	
 	
-	public Execution[] getExecutions(String accountNumber, ZonedDateTime startTime, ZonedDateTime endTime) throws RefreshTokenException {
+	private class Executions { private Execution[] executions; }
+	public Execution[] getExecutions(String accountNumber, ZonedDateTime startTime, ZonedDateTime endTime) throws RefreshTokenException, StatusCodeException {
 		String URL = authorization.getApiServer() + "v1/accounts/" + accountNumber + "/executions";
 		
 		Request request = new Request(URL);
@@ -148,34 +164,91 @@ public class QuestradeAPI {
 		
 		String executionsJSON = connectToURL(request);
 
+		
+		
 		Executions executions = new Gson().fromJson(executionsJSON, Executions.class);
 		
-		return executions.getExecutions();
+		return executions.executions;
 	}	
+
 	
-	/**
-     * Connect to a URL that doesn't require an access token.
-     * @param URLIn The URL that is to be connected to.
-     * @return Returns a reference to the BufferedReader from info can be read from.
-     * @throws ResponseCodeException If the website's response code is not 200 (200 = OK)
-     */
-    /*private String connectToURL(RequestMethod requestMethod, String URLIn, HttpParameter ...params) throws RefreshTokenException {
-        return connectToURL(requestMethod, URLIn, null, params);
-    }
+	private Order[] getOrders(String accountNumber, String[] orderIds) throws RefreshTokenException, StatusCodeException {
+		String URL = authorization.getApiServer() + "v1/accounts/" + accountNumber + "/orders";
+		
+		Request request = new Request(URL);
+		request.setRequestMethod(RequestMethod.GET);
+		request.setAccessToken(authorization.getAccessToken());
+		request.addParameter("ids", orderIds);
+		
+		return completeGetOrders(request);
+	}
 	
-    private String connectToURL(RequestMethod requestMethod, String URLIn, String accessToken, HttpParameter ...params) throws RefreshTokenException {
-    	return null;
-    }*/
-	/**
-     * Connect to a URL that requires a start date and an end date.
-     * @param URLIn The URL that is to be connected to.
-     * @param accessToken The access token.
-     * @param startTime Start of time range in ISO format. By default – start of today, 12:00am. Eg of date: startTime=2020-08-23T21:14:07+00:00
-     * @param endTime End of time range in ISO format. By default – end of today, 11:59pm
-     * @return Returns a reference to the BufferedReader from info can be read from.
-	 * @throws RefreshTokenException 
-     */
-    private String connectToURL(Request request) throws RefreshTokenException {
+	public Order[] getOrders(String accountNumber, int[] orderIds) throws RefreshTokenException, StatusCodeException {
+		String[] allOrderIds = new String[orderIds.length ];
+	
+		//copy over orderIds array as string
+		for(int i = 0; i < orderIds.length; i++) {
+			allOrderIds[i] = orderIds[i] + "";
+		}
+		
+		return getOrders(accountNumber, allOrderIds);
+	}
+	
+	public Order[] getOrders(String accountNumber, int orderId, int ...orderIds) throws RefreshTokenException, StatusCodeException {
+		String[] allOrderIds = new String[orderIds.length + 1];
+		
+		allOrderIds[0] = orderId + "";
+		
+		//copy over orderIds array
+		for(int i = 1; i <= orderIds.length; i++) {
+			allOrderIds[i] = orderIds[i-1] + "";
+		}
+		
+		return getOrders(accountNumber, allOrderIds);
+	}
+	
+	public Order[] getOrders(String accountNumber, ZonedDateTime startTime, ZonedDateTime endTime) throws RefreshTokenException, StatusCodeException {
+		return getOrders(accountNumber, startTime, endTime, null);
+	}
+	
+	public Order[] getOrders(String accountNumber, ZonedDateTime startTime, ZonedDateTime endTime, StateFilter stateFilter) throws RefreshTokenException, StatusCodeException {
+		String URL = authorization.getApiServer() + "v1/accounts/" + accountNumber + "/orders";
+		
+		Request request = new Request(URL);
+		request.setRequestMethod(RequestMethod.GET);
+		request.setAccessToken(authorization.getAccessToken());
+		request.addParameter("startTime", startTime.format(isoFormatter));
+		request.addParameter("endTime", endTime.format(isoFormatter));
+		if(stateFilter != null) {
+			request.addParameter("stateFilter", stateFilter.name());
+		}
+		
+		return completeGetOrders(request);
+	}
+	
+	private class Orders { private Order[] orders; }
+	private Order[] completeGetOrders(Request request) throws StatusCodeException, RefreshTokenException {
+		String ordersJSON = connectToURL(request);
+		Orders orders = new Gson().fromJson(ordersJSON, Orders.class);
+		return orders.orders;
+	}
+	
+	private class Positions { private Position[] positions; }
+	public Position[] getPositions(String accountNumber) throws StatusCodeException, RefreshTokenException {
+		String URL = authorization.getApiServer() + "v1/accounts/" + accountNumber + "/positions";
+		
+		Request request = new Request(URL);
+		request.setRequestMethod(RequestMethod.GET);
+		request.setAccessToken(authorization.getAccessToken());		
+		
+		String positionsJSON = connectToURL(request);
+		
+		Positions positions = new Gson().fromJson(positionsJSON, Positions.class);
+		
+		return positions.positions;
+	}
+	
+    private String connectToURL(Request request) throws RefreshTokenException, StatusCodeException {
 
         try {
 
@@ -187,9 +260,9 @@ public class QuestradeAPI {
             //java.net.UnknownHostException e
             
             
-            System.out.println("responseCode=" + statusCode + "\n");
+            //System.out.println("responseCode=" + statusCode + "\n");
             if(statusCode == 400) {
-            	throw new RefreshTokenException("Error code " + statusCode + "was returned. Assuming refresh token is invalid.");
+            	throw new RefreshTokenException("Error code " + statusCode + " was returned. Assuming refresh token is invalid.");
             }
             
             BufferedReader in = new BufferedReader(new InputStreamReader(connection.getInputStream()));
@@ -210,10 +283,9 @@ public class QuestradeAPI {
             	}
             	
             	
+            	
             	throw new StatusCodeException("A bad status code was returned: " + statusCode, statusCode);
             }
-            
-            
             
             return responseJSON;
             
