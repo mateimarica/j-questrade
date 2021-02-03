@@ -11,6 +11,7 @@ import com.jquestrade.Balances.Currency;
 import com.jquestrade.Position;
 import com.jquestrade.QuestradeAPI;
 import com.jquestrade.exceptions.RefreshTokenException;
+import com.jquestrade.exceptions.StatusCodeException;
 
 class Test {
 
@@ -23,9 +24,9 @@ class Test {
 
 		try {
 			q.activate();
-			System.out.println(q.getAuthorization().getApiServer());
+			System.out.println(q.getAuthorization().getAccessTokenExpiry());
 			Account[] accounts = q.getAccounts();
-	
+
 			Balances balances = q.getBalances(accounts[0].getNumber());
 			
 			System.out.println(balances.getPerCurrencyBalances(Currency.CAD).getTotalEquity());
@@ -39,7 +40,10 @@ class Test {
 			
 		} catch (RefreshTokenException e) {
 			System.out.println("Refresh token bad");
-			return;
+			e.printStackTrace();
+		} catch (StatusCodeException e) {
+			System.out.println("Bad request. Status code: " + e.getStatusCode());
+			e.printStackTrace();
 		}
 
 

@@ -19,15 +19,15 @@ class Request {
 
 	private String contentType;
 	
-	public Request(String URL) {
+	Request(String URL) {
         this.URL = URL;
 	}
 	
-	public void setRequestMethod(String requestMethod) {
+	void setRequestMethod(String requestMethod) {
 		this.requestMethod = requestMethod;
 	}
 	
-	public void addParameter(String key, String[] values) {
+	void addParameter(String key, String[] values) {
 		URL += ((parameterCount == 0) ? "?" : "&")
 			+ key + "=" + values[0];
 		
@@ -38,7 +38,7 @@ class Request {
 		parameterCount++;
 	}
 	
-	public void addParameter(String key, String value, String ...values) {
+	void addParameter(String key, String value, String ...values) {
 		URL += ((parameterCount == 0) ? "?" : "&")
 			+ key + "=" + value;
 		
@@ -49,16 +49,16 @@ class Request {
 		parameterCount++;
 	}
 	
-	public void setContentType(String contentType) {
+	void setContentType(String contentType) {
 		this.contentType = contentType;
 	}
 
 	
-	public void setAccessToken(String accessToken) {
+	void setAccessToken(String accessToken) {
 		this.accessToken = accessToken;
 	}
 	
-	public HttpURLConnection getConnection() throws IOException {
+	HttpURLConnection getConnection() throws IOException {
 		HttpURLConnection connection = (HttpURLConnection) new URL(URL).openConnection();
 		
 		if (accessToken != null) {

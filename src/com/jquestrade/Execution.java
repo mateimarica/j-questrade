@@ -1,5 +1,9 @@
 package com.jquestrade;
 
+/** Represents executions for a specific account. 
+ * @see <a href="https://www.questrade.com/api/documentation/rest-operations/account-calls/accounts-id-executions">
+ * The executions properties documentation</a>
+ */
 public class Execution {
 	
 	private Execution() {}
@@ -22,119 +26,142 @@ public class Execution {
 	private double executionFee;
 	private double secFee;
 	private int canadianExecutionFee;
-	/**
-	 * @return the symbol
+	private int parentId;
+	
+	/** Returns the symbol of the security involved in the execution.
+	 * @return The symbol of the security involved in the execution.
 	 */
 	public String getSymbol() {
 		return symbol;
 	}
-	/**
-	 * @return the symbolId
+	
+	/** Returns the internal symbol identifier of the security involved in the execution.
+	 * @return The internal symbol identifier
 	 */
 	public int getSymbolId() {
 		return symbolId;
 	}
-	/**
-	 * @return the quantity
+	
+	/** Returns the number of shares in the execution.
+	 * @return The number of shares in the execution.
 	 */
 	public int getQuantity() {
 		return quantity;
 	}
-	/**
-	 * @return the side
+	
+	/** Returns the client side of the order to which the execution belongs. 
+	 * Example values: Buy, Sell, Short, BTO, etc..
+	 * @return The client side of the order to which the execution belongs.
+	 * @see <a href="https://www.questrade.com/api/documentation/rest-operations/enumerations/enumerations#order-side">
+	 * The Client Order Side</a>
+	 * section for all possible values.
 	 */
 	public String getSide() {
 		return side;
 	}
-	/**
-	 * @return the price
+	
+	/** Returns the execution price.
+	 * @return The execution price.
 	 */
 	public double getPrice() {
 		return price;
 	}
-	/**
-	 * @return the id
+	
+	/** Returns the internal identifier of the execution.
+	 * @return The internal identifier of the execution.
 	 */
 	public double getId() {
 		return id;
 	}
-	/**
-	 * @return the orderId
+	
+	/** Returns the internal identifier of the order to which the execution belongs.
+	 * @return The internal identifier of the order to which the execution belongs.
 	 */
 	public int getOrderId() {
 		return orderId;
 	}
-	/**
-	 * @return the orderChainId
+	
+	/** Returns the internal identifier of the order chain to which the execution belongs.
+	 * @return The internal identifier of the order chain to which the execution belongs.
 	 */
 	public int getOrderChainId() {
 		return orderChainId;
 	}
-	/**
-	 * @return the exchangeExecId
+	
+	/** Returns the identifier of the execution at the market where it originated.
+	 * @return The identifier of the execution at the market where it originated.
 	 */
 	public String getExchangeExecId() {
 		return exchangeExecId;
 	}
-	/**
-	 * @return the timestamp
+	
+	/** Returns the execution timestamp in ISO 8601 format.
+	 * @return The execution timestamp.
 	 */
 	public String getTimestamp() {
 		return timestamp;
 	}
-	/**
-	 * @return the notes
+	
+	/** Returns manual notes for the execution that may have been entered by Trade Desk staff.
+	 * This is usually blank.
+	 * @return Manual execution notes.
 	 */
 	public String getNotes() {
 		return notes;
 	}
-	/**
-	 * @return the venue
+	/** Returns the trading venue where execution originated.
+	 * @return The trading venue where execution originated.
 	 */
 	public String getVenue() {
 		return venue;
 	}
-	/**
-	 * @return the totalCost
+	
+	/** Returns the execution cost (price x quantity).
+	 * @return The execution cost.
 	 */
 	public double getTotalCost() {
 		return totalCost;
 	}
-	/**
-	 * @return the orderPlacementCommission
+	
+	/** Returns the Questrade commission for orders placed with Trade Desk.
+	 * @return The order placement commission.
 	 */
 	public double getOrderPlacementCommission() {
 		return orderPlacementCommission;
 	}
-	/**
-	 * @return the commission
+	
+	/** Returns the Questrade commission for the execution.
+	 * @return The commission.
 	 */
 	public double getCommission() {
 		return commission;
 	}
-	/**
-	 * @return the executionFee
+	
+	/** Returns the liquidity fee charged by execution venue.
+	 * @return The liquidity fee.
 	 */
 	public double getExecutionFee() {
 		return executionFee;
 	}
-	/**
-	 * @return the secFee
+	
+	/** Returns the SEC fee charged on all sales of US securities.
+	 * @return The SEC fee.
 	 */
 	public double getSecFee() {
 		return secFee;
 	}
-	/**
-	 * @return the canadianExecutionFee
+	
+	/** Returns any additional execution fee charged by TSX (if applicable).
+	 * @return The additional execution fee charged by the TSX.
 	 */
 	public int getCanadianExecutionFee() {
 		return canadianExecutionFee;
 	}
-	/**
-	 * @return the parentId
+	
+	/** Returns the internal identifier of the parent order.
+	 * @return The internal identifier of the parent order.
 	 */
 	public int getParentId() {
 		return parentId;
 	}
-	private int parentId;
 }

@@ -1,5 +1,9 @@
 package com.jquestrade;
 
+/** Represents an account activity. Could be a cash transactions, dividends, trades, etc. 
+ * @see <a href="https://www.questrade.com/api/documentation/rest-operations/account-calls/accounts-id-activities">
+ * The activity properties documentation</a>
+ */
 public class Activity {
 	
 	private Activity() {}
@@ -9,113 +13,128 @@ public class Activity {
 	private String settlementDate;
 	private String action;
 	private String symbol;
-	private String symbolId;
+	private int symbolId;
 	private String description;
 	private String currency;
-	private String quantity;
-	private String price;
-	private String grossAmount;
-	private String commission;
-	private String netAmount;
+	private double quantity;
+	private double price;
+	private double grossAmount;
+	private double commission;
+	private double netAmount;
 	private String type;
 	
-	/**
-	 * @return the tradeDate
+	/** The trade date as a string in ISO 8601 format.
+	 * @return The trade date
 	 */
 	public String getTradeDate() {
 		return tradeDate;
 	}
 	
-	/**
-	 * @return the transactionDate
+	/** The transaction date as a string in ISO 8601 format.
+	 * @return The transaction date
 	 */
 	public String getTransactionDate() {
 		return transactionDate;
 	}
 	
-	/**
-	 * @return the settlementDate
+	/** The settlement date as a string in ISO 8601 format.
+	 * @return The settlement date.
 	 */
 	public String getSettlementDate() {
 		return settlementDate;
 	}
 	
-	/**
-	 * @return the action
+	/** The action.<br>
+	 * <u>Example types:</u><br>
+	 * Buy (for orders)<br>
+	 * Sell (for orders)<br>
+	 * CON (for deposits)
+	 * @return The action.
 	 */
 	public String getAction() {
 		return action;
 	}
 	
-	/**
-	 * @return the symbol
+	/** Returns the stock symbol involved in this activity (if applicable).
+	 * @return Returns the stock symbol involved in this activity,
+	 * Returns an empty string ({@code ""}) if the activity isn't related to any particular security, 
+	 * like a desposit.
 	 */
 	public String getSymbol() {
 		return symbol;
 	}
 	
-	/**
-	 * @return the symbolId
+	/** Returns a numeric stock ID for the particular stock involved in this activity (if applicable).
+	 * @return Returns the stock ID for the stock involved in this activity,
+	 * Returns {@code 0} if the activity isn't related to any particular security, 
+	 * like a desposit.
 	 */
-	public String getSymbolId() {
+	public int getSymbolId() {
 		return symbolId;
 	}
 	
-	/**
-	 * @return the description
+	/** Returns the description of the activity.
+	 * @return The description of the activity.
 	 */
 	public String getDescription() {
 		return description;
 	}
 	
-	/**
-	 * @return the currency
+	/** Returns which currency was involved in the activity.
+	 * @return Which currency was involved in the activity (<b>CAD</b> or <b>USD</b>).
 	 */
 	public String getCurrency() {
 		return currency;
 	}
 	
-	/**
-	 * @return the quantity
+	/** Returns the quantity of shares involved in the activity (if applicable).
+	 * @return Returns quantity of shares involved in the activity.
+	 * Returns {@code 0} if the activity isn't related to any particular security, 
+	 * like a desposit.
 	 */
-	public String getQuantity() {
+	public double getQuantity() {
 		return quantity;
 	}
 	
-	/**
-	 * @return the price
+	/** Returns the price of the shares involved in the activity (if the activity was an order).
+	 * @return Returns The price of the shares involved in the activity
+	 * Returns {@code 0} if the activity isn't related to any particular security, 
+	 * like a desposit.
 	 */
-	public String getPrice() {
+	public double getPrice() {
 		return price;
 	}
 	
-	/**
-	 * @return the grossAmount
+	/** Returns the gross amount.
+	 * @return Returns the gross amount.
+	 * Returns {@code 0} if the activity isn't related to any particular security, 
+	 * like a desposit.
 	 */
-	public String getGrossAmount() {
+	public double getGrossAmount() {
 		return grossAmount;
 	}
 	
-	/**
-	 * @return the commission
+	/** Returns the net change for the commission paid for the activity. 
+	 * For example, orders will often charge ECN fees, which are generally a few cents.
+	 * @return The commission.
 	 */
-	public String getCommission() {
+	public double getCommission() {
 		return commission;
 	}
 	
-	/**
-	 * @return the netAmount
+	/** Returns the net amount for the account. 
+	 * For example, deposits and sell orders will have a positive net amount
+	 * and withdrawals and buy orders will have negative net amounts.
+	 * @return The net amount.
 	 */
-	public String getNetAmount() {
+	public double getNetAmount() {
 		return netAmount;
 	}
 	
-	/**
-	 * @return the type
+	/** Returns the activity type. Possible values: Deposits, Dividends, Trades, etc.
+	 * @return The activity type.
 	 */
 	public String getType() {
 		return type;
 	}
-	
-	
 }
