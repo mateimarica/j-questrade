@@ -6,6 +6,12 @@ import java.net.URL;
 
 class Request {
 	
+	/** Request method for the HTTP request */
+	class RequestMethod {
+		static final String GET = "GET";
+		static final String POST = "POST";
+	}
+	
 	private String accessToken;
 	
 	private int parameterCount = 0;
@@ -69,7 +75,6 @@ class Request {
 		
 		connection.setRequestMethod(requestMethod);
 			
-		//System.out.println("URL = " + URL);
 		return connection;
 	}
 	

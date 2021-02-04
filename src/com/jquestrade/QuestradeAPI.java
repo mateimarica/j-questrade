@@ -10,7 +10,9 @@ import java.util.function.Consumer;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
+import com.jquestrade.Candle.Interval;
 import com.jquestrade.Order.OrderState;
+import com.jquestrade.Request.RequestMethod;
 import com.jquestrade.exceptions.ArgumentException;
 import com.jquestrade.exceptions.RefreshTokenException;
 import com.jquestrade.exceptions.StatusCodeException;
@@ -30,7 +32,7 @@ public class QuestradeAPI {
 	/** Date formatter object for converting converting <code>ZonedDateTime</code> objects to strings in the 
 	 * ISO 8601 time format.
 	 */
-	private final DateTimeFormatter isoFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ssXXX");
+	private static final DateTimeFormatter ISO_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ssXXX");
 	
 	/** Authorization object that is created with information retrieved when consuming refresh token. */
 	private Authorization authorization;
@@ -40,12 +42,16 @@ public class QuestradeAPI {
 	 */
 	private Consumer<Authorization> authRelayFunction = null;
 	
-	/** The refresh token that this object is created with. This variable's only function is to hold the refresh token between the
+	/** <b>Temporary storage variable.</b> The refresh token that this object is created with. This variable's only function is to hold the refresh token between the
 	 * time that a {@code QuestradeAPI} object is created and the time that it's activated.
 	 * After this token is consumed by getting an access token, this string will be {@code null} for the remainder of the object's life.
 	 */
 	private String startingRefreshToken;
 	
+	/** <b>Temporary storage variable.</b> Authorization that is created in {@link #QuestradeAPI(String, String, String)}. Meant to use cached data
+	 * to save doing an API request. This is {@code null} if the {@link #QuestradeAPI(String)} constructor is used
+	 * or after {@link #activate()} is called when the {@link #QuestradeAPI(String, String, String)} constructor is used.
+	 */
 	private Authorization startingAuthorization;
 	
 	/** Creates an instance of the {@code QuestradeAPI} wrapper, whose methods can be used to access the Questrade API. 
@@ -270,8 +276,8 @@ public class QuestradeAPI {
 		Request request = new Request(URL);
 		request.setRequestMethod(RequestMethod.GET);
 		request.setAccessToken(authorization.getAccessToken());
-		request.addParameter("startTime", startTime.format(isoFormatter));
-		request.addParameter("endTime", endTime.format(isoFormatter));
+		request.addParameter("startTime", startTime.format(ISO_FORMATTER));
+		request.addParameter("endTime", endTime.format(ISO_FORMATTER));
 		
 		String activitiesJSON = sendRequest(request);
 	
@@ -304,8 +310,8 @@ public class QuestradeAPI {
 		Request request = new Request(URL);
 		request.setRequestMethod(RequestMethod.GET);
 		request.setAccessToken(authorization.getAccessToken());
-		request.addParameter("startTime", startTime.format(isoFormatter));
-		request.addParameter("endTime", endTime.format(isoFormatter));
+		request.addParameter("startTime", startTime.format(ISO_FORMATTER));
+		request.addParameter("endTime", endTime.format(ISO_FORMATTER));
 		
 		String executionsJSON = sendRequest(request);
 
@@ -425,8 +431,8 @@ public class QuestradeAPI {
 		Request request = new Request(URL);
 		request.setRequestMethod(RequestMethod.GET);
 		request.setAccessToken(authorization.getAccessToken());
-		request.addParameter("startTime", startTime.format(isoFormatter));
-		request.addParameter("endTime", endTime.format(isoFormatter));
+		request.addParameter("startTime", startTime.format(ISO_FORMATTER));
+		request.addParameter("endTime", endTime.format(ISO_FORMATTER));
 		if(orderState != null) {
 			request.addParameter("stateFilter", orderState.name());
 		}
@@ -477,6 +483,44 @@ public class QuestradeAPI {
 		return positions.positions;
 	}
 	
+	/** Private class used for GSON parsing, only in {@link QuestradeAPI#getCandles(int, ZonedDateTime, ZonedDateTime, Interval)} */
+	private class Candles { private Candle[] candles; }
+	
+	/** Returns historical market data in the form of OHLC candlesticks for a specified symbol.
+	 * This call is limited to returning 2,000 candlesticks in a single response.
+	 * @param symbolId The internal symbol identifier.
+	 * @param startTime The beginning of the time period to get the candles for.
+	 * @param endTime The end of the time period to get the candles for. 
+	 * @param interval The time between the candles.
+	 * @return An {@code Candle[]} array containing all of the {@link Candle}s within in the given time period.
+	 * @throws RefreshTokenException If the refresh token is invalid.
+	 * @throws ArgumentException If the request arguments are invalid.
+	 * @throws StatusCodeException If an error occurs when contacting the Questrade API.
+	 * @see <a href="https://www.questrade.com/api/documentation/rest-operations/market-calls/markets-candles-id">
+	 * The Questrade API <b>GET markets/candles/:id</b> documentation</a>
+	 */
+	public Candle[] getCandles(int symbolId, ZonedDateTime startTime, ZonedDateTime endTime, Interval interval) throws RefreshTokenException {
+		if(startTime.isAfter(endTime)) {
+			throw new TimeRangeException("The startTime must be earlier than the endTime.");
+		}
+		
+		String URL = authorization.getApiServer() + "v1/markets/candles/" + symbolId;
+		
+		Request request = new Request(URL);
+		request.setRequestMethod(RequestMethod.GET);
+		request.setAccessToken(authorization.getAccessToken());
+		request.addParameter("startTime", startTime.format(ISO_FORMATTER));
+		request.addParameter("endTime", endTime.format(ISO_FORMATTER));
+		request.addParameter("interval", interval.name());
+		
+		String candlesJSON = sendRequest(request);
+		
+		Candles candles = new Gson().fromJson(candlesJSON, Candles.class);
+		
+		return candles.candles;
+	}
+	
+	/** Represents an error response returned by the Questrade API servers. */
 	private class Error {
 		private int code;
 		private String message;
@@ -508,7 +552,7 @@ public class QuestradeAPI {
             	BufferedReader in = new BufferedReader(new InputStreamReader(connection.getErrorStream()));
             	String responseJSON = in.readLine();
             	connection.disconnect();
-            	System.out.println(responseJSON);
+
             	Error error = new Gson().fromJson(responseJSON, Error.class);
      
             	// Error code 1017 means access token is invalid or expired

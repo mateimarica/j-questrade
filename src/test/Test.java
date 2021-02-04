@@ -7,15 +7,17 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.Scanner;
 import com.jquestrade.*;
+import com.jquestrade.Candle.Interval;
 import com.jquestrade.exceptions.*;
 
 class Test {
 
 	public static void main(String[] args) throws FileNotFoundException {
 		
-		String refreshToken = new Scanner(new File("C:\\Users\\Public\\token.txt")).nextLine();
+		Scanner s = new Scanner(new File("C:\\Users\\Public\\token.txt"));
 
-		QuestradeAPI q = new QuestradeAPI(refreshToken);
+		QuestradeAPI q = new QuestradeAPI(s.nextLine(), s.nextLine(), s.nextLine());
+		//QuestradeAPI q = new QuestradeAPI(s.nextLine());
 		q.setAuthRelay(authorization -> saveToDatabase(authorization));
 		
 		ZonedDateTime t1 = ZonedDateTime.of(2020, 11, 1, 0, 0, 0, 0, ZoneId.of("GMT"));
@@ -26,19 +28,20 @@ class Test {
 			System.out.println(q.getAuthorization().getAccessTokenExpiry());
 			Account[] accounts = q.getAccounts();
 
-			/*Position[] positions = q.getPositions(accounts[0].getNumber());
+			int symbolId = q.getPositions(accounts[0].getNumber())[2].getSymbolId();
+						
+			Candle[] candles = q.getCandles(symbolId, t1, t2, Interval.OneWeek);
 			
-			for(int i = 0; i < positions.length; i++) {
-				System.out.print(positions[i].getSymbol());
-				System.out.printf("\t%s\n", positions[i].getSymbolId());
-			}*/
-			
-			q.getExecutions(accounts[0].getNumber(), t1, t2);
-			
-			Activity[] activities = q.getActivities(accounts[0].getNumber(), t1, t2);
-			
-			for(int i = 0; i < activities.length; i++) {
-				System.out.println(activities[i].getDescription());
+			for(int i = 0; i < candles.length; i++) {
+				System.out.println(candles[i].getClose());
+				System.out.println(candles[i].getEnd());
+				System.out.println(candles[i].getHigh());
+				System.out.println(candles[i].getLow());
+				System.out.println(candles[i].getOpen());
+				System.out.println(candles[i].getStart());
+				System.out.println(candles[i].getVolume());
+				System.out.println(candles[i].getVWAP());
+				System.out.println("----------------------------------");
 			}
 			
 		} catch (RefreshTokenException e) {
@@ -49,7 +52,7 @@ class Test {
 			System.out.println("Bad request. Status code: " + e.getStatusCode());
 			e.printStackTrace();
 		} catch (ArgumentException e) {
-			e.printStackTrace();
+			e.printStackTrace();	
 		}
 		
 	}
