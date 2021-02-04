@@ -3,7 +3,6 @@ package com.jquestrade;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.lang.annotation.AnnotationFormatError;
 import java.net.HttpURLConnection;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
@@ -12,8 +11,10 @@ import java.util.function.Consumer;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.jquestrade.Order.OrderState;
+import com.jquestrade.exceptions.ArgumentException;
 import com.jquestrade.exceptions.RefreshTokenException;
 import com.jquestrade.exceptions.StatusCodeException;
+import com.jquestrade.exceptions.TimeRangeException;
 
 /** The {@code QuestradeAPI} class represents the Questrade API. It contains methods for easily accessing the Questrade API,
  * such as retrieving the balances, positions, orders, market data, etc. It will also automatically retrieve a new access token
@@ -22,6 +23,9 @@ import com.jquestrade.exceptions.StatusCodeException;
  * @see <a href="https://www.questrade.com/api">Questrade API documentation</a>
  */
 public class QuestradeAPI {
+	
+	/** A string representation of the this object's last HTTP request. */
+	private String lastRequest;
 	
 	/** Date formatter object for converting converting <code>ZonedDateTime</code> objects to strings in the 
 	 * ISO 8601 time format.
@@ -70,6 +74,13 @@ public class QuestradeAPI {
 		this.startingAuthorization = new Authorization(refreshToken, accessToken, apiServer);
 	}
 	
+	/** A string representation of the this object's last HTTP request.
+	 * @return A string representation of the this object's last HTTP request.
+	 */
+	public String getLastRequest() {
+		return lastRequest;
+	}
+	
 	/** Starts up the API connection by exchanging the refresh token for an access token. You must call this method before calling any methods that perform
 	 * API requests. This will create an {@link Authorization} for this object. Calling this method more than one time has no effect.
 	 * @return A reference to the calling object, for optional method chaining.<br>
@@ -77,7 +88,7 @@ public class QuestradeAPI {
 	 * @throws RefreshTokenException If the refresh token is invalid.
 	 * @throws StatusCodeException If an error occurs when contacting the Questrade API.
 	 * */
-	public QuestradeAPI activate() throws RefreshTokenException, StatusCodeException {
+	public QuestradeAPI activate() throws RefreshTokenException {
 		if(startingRefreshToken != null) {
 			retrieveAccessToken(startingRefreshToken);
 			startingRefreshToken = null;
@@ -115,7 +126,7 @@ public class QuestradeAPI {
 	 * @throws RefreshTokenException If the refresh token is invalid.
 	 * @throws StatusCodeException If an error occurs when contacting the Questrade API.
 	 */
-	public void retrieveAccessToken(String refreshToken) throws RefreshTokenException, StatusCodeException {		
+	public void retrieveAccessToken(String refreshToken) throws RefreshTokenException {		
 		String URL = "https://login.questrade.com/oauth2/token?grant_type=refresh_token&refresh_token=" + refreshToken;
 		
 		Request request = new Request(URL);
@@ -139,7 +150,7 @@ public class QuestradeAPI {
 	 * @throws RefreshTokenException If the refresh token is invalid.
 	 * @throws StatusCodeException If an error occurs when contacting the Questrade API.
 	 */
-	public void retrieveAccessToken() throws RefreshTokenException, StatusCodeException {
+	public void retrieveAccessToken() throws RefreshTokenException {
 		retrieveAccessToken(authorization.getRefreshToken());
 	}
 
@@ -179,7 +190,7 @@ public class QuestradeAPI {
 	 * @see <a href="https://www.questrade.com/api/documentation/rest-operations/account-calls/accounts-id-balances">
 	 * The Questrade API <b>GET accounts/:id/balances</b> documentation</a>
 	 */
-	public Balances getBalances(String accountNumber) throws StatusCodeException, RefreshTokenException {
+	public Balances getBalances(String accountNumber) throws RefreshTokenException {
 		String URL = authorization.getApiServer() + "v1/accounts/" + accountNumber + "/balances";
 		
 		Request request = new Request(URL);
@@ -202,7 +213,7 @@ public class QuestradeAPI {
 	 * @see <a href="https://questrade.com/api/documentation/rest-operations/account-calls/accounts">
 	 * The Questrade API <b>GET accounts</b> documentation</a>
 	 */
-	public Account[] getAccounts() throws RefreshTokenException, StatusCodeException {
+	public Account[] getAccounts() throws RefreshTokenException {
 		String URL = authorization.getApiServer() + "v1/accounts/";
 		
 		Request request = new Request(URL);
@@ -222,7 +233,7 @@ public class QuestradeAPI {
 	 * @see <a href="https://www.questrade.com/api/documentation/rest-operations/account-calls/time">
 	 * The Questrade API <b>GET time</b> documentation</a>
 	 */
-	public ZonedDateTime getTime() throws RefreshTokenException, StatusCodeException {
+	public ZonedDateTime getTime() throws RefreshTokenException {
 		String URL = authorization.getApiServer() + "v1/time";
 
 		Request request = new Request(URL);
@@ -238,17 +249,22 @@ public class QuestradeAPI {
 	/** Private class used for GSON parsing, only in {@link QuestradeAPI#getActivities(String, ZonedDateTime, ZonedDateTime)} */
 	private class Activities { private Activity[] activities; }
 	
-	/** Get all of the activities of an account in a given time period. A maximum of 31 days of data can be requested at a time.
+	/** Get all of the activities of an account in a given time period. A maximum of 30 days of data can be requested at a time.
 	 * @param accountNumber The account for which to get the activities for.
 	 * @param startTime The beginning of the time period to get the activities for.
 	 * @param endTime The end of the time period to get the activities for. This cannot be more than 31 days after the startTime argument.
 	 * @return An {@code Activity[]} array representing all the activities in the given time period.
 	 * @throws RefreshTokenException If the refresh token is invalid.
+	 * @throws ArgumentException If the request arguments are invalid.
 	 * @throws StatusCodeException If an error occurs when contacting the Questrade API.
 	 * @see <a href="https://www.questrade.com/api/documentation/rest-operations/account-calls/accounts-id-activities">
 	 * The Questrade API <b>GET accounts/:id/activities</b> documentation</a>
 	 */
-	public Activity[] getActivities(String accountNumber, ZonedDateTime startTime, ZonedDateTime endTime) throws RefreshTokenException, StatusCodeException {
+	public Activity[] getActivities(String accountNumber, ZonedDateTime startTime, ZonedDateTime endTime) throws RefreshTokenException {
+		if(startTime.isAfter(endTime)) {
+			throw new TimeRangeException("The startTime must be earlier than the endTime.");
+		}
+		
 		String URL = authorization.getApiServer() + "v1/accounts/" + accountNumber + "/activities";
 		
 		Request request = new Request(URL);
@@ -267,17 +283,22 @@ public class QuestradeAPI {
 	/** Private class used for GSON parsing, only in {@link QuestradeAPI#getExecutions(String, ZonedDateTime, ZonedDateTime)} */
 	private class Executions { private Execution[] executions; }
 	
-	/** Get all of the executions of an account in a given time period. Unsure if maximum of 31 days of data can be requested at a time, I didn't check.
+	/** Get all of the executions of an account in a given time period. A maximum of 30 days of data can be requested at a time.
 	 * @param accountNumber The account for which to get the executions for.
 	 * @param startTime The beginning of the time period to get the executions for.
 	 * @param endTime The end of the time period to get the executions for. 
 	 * @return An {@code Activity[]} array representing all the executions in the given time period.
 	 * @throws RefreshTokenException If the refresh token is invalid.
+	 * @throws ArgumentException If the request arguments are invalid.
 	 * @throws StatusCodeException If an error occurs when contacting the Questrade API.
 	 * @see <a href="https://www.questrade.com/api/documentation/rest-operations/account-calls/accounts-id-executions">
 	 * The Questrade API <b>GET accounts/:id/executions</b> documentation</a>
 	 */
-	public Execution[] getExecutions(String accountNumber, ZonedDateTime startTime, ZonedDateTime endTime) throws RefreshTokenException, StatusCodeException {
+	public Execution[] getExecutions(String accountNumber, ZonedDateTime startTime, ZonedDateTime endTime) throws RefreshTokenException {
+		if(startTime.isAfter(endTime)) {
+			throw new TimeRangeException("The startTime must be earlier than the endTime.");
+		}
+		
 		String URL = authorization.getApiServer() + "v1/accounts/" + accountNumber + "/executions";
 		
 		Request request = new Request(URL);
@@ -300,11 +321,12 @@ public class QuestradeAPI {
 	 * @param orderIds An array containing all of the orders IDs to get information for.
 	 * @return An {@code Order[]} array containing all of the {@link Order} objects corresponding to the given order IDs.
 	 * @throws RefreshTokenException If the refresh token is invalid.
+	 * @throws ArgumentException If the request arguments are invalid.
 	 * @throws StatusCodeException If an error occurs when contacting the Questrade API.
 	 * @see <a href="https://www.questrade.com/api/documentation/rest-operations/account-calls/accounts-id-orders">
 	 * The Questrade API <b>GET accounts/:id/orders[/:orderId]</b> documentation</a>
 	 */
-	private Order[] getOrders(String accountNumber, String[] orderIds) throws RefreshTokenException, StatusCodeException {
+	private Order[] getOrders(String accountNumber, String[] orderIds) throws RefreshTokenException {
 		String URL = authorization.getApiServer() + "v1/accounts/" + accountNumber + "/orders";
 		
 		Request request = new Request(URL);
@@ -324,7 +346,7 @@ public class QuestradeAPI {
 	 * @see <a href="https://www.questrade.com/api/documentation/rest-operations/account-calls/accounts-id-orders">
 	 * The Questrade API <b>GET accounts/:id/orders[/:orderId]</b> documentation</a>
 	 */
-	public Order[] getOrders(String accountNumber, int[] orderIds) throws RefreshTokenException, StatusCodeException {
+	public Order[] getOrders(String accountNumber, int[] orderIds) throws RefreshTokenException {
 		String[] allOrderIds = new String[orderIds.length];
 	
 		//copy over orderIds array as string
@@ -346,11 +368,12 @@ public class QuestradeAPI {
 	 * @param orderIds Optional parameter for if you want to add more order IDs to the request.
 	 * @return An {@code Order[]} array containing all of the {@link Order} objects corresponding to the given order IDs.
 	 * @throws RefreshTokenException If the refresh token is invalid.
+	 * @throws ArgumentException If the request arguments are invalid.
 	 * @throws StatusCodeException If an error occurs when contacting the Questrade API.
 	 * @see <a href="https://www.questrade.com/api/documentation/rest-operations/account-calls/accounts-id-orders">
 	 * The Questrade API <b>GET accounts/:id/orders[/:orderId]</b> documentation</a>
 	 */
-	public Order[] getOrders(String accountNumber, int orderId, int ...orderIds) throws RefreshTokenException, StatusCodeException {
+	public Order[] getOrders(String accountNumber, int orderId, int ...orderIds) throws RefreshTokenException {
 		String[] allOrderIds = new String[orderIds.length + 1];
 		
 		allOrderIds[0] = orderId + "";
@@ -363,7 +386,7 @@ public class QuestradeAPI {
 		return getOrders(accountNumber, allOrderIds);
 	}
 	
-	/** Get all of the orders of an account in a given time period. Unsure if maximum of 31 days of data can be requested at a time, I didn't check.
+	/** Get all of the orders of an account in a given time period. A maximum of 30 days of data can be requested at a time.
 	 * This will get all orders in the time period, whether still open or closed. 
 	 * To specify the state of the filter, use the {@link #getOrders(String, ZonedDateTime, ZonedDateTime, orderState)} method.
 	 * @param accountNumber The account for which to get the orders for.
@@ -375,11 +398,11 @@ public class QuestradeAPI {
 	 * @see <a href="https://www.questrade.com/api/documentation/rest-operations/account-calls/accounts-id-orders">
 	 * The Questrade API <b>GET accounts/:id/orders[/:orderId]</b> documentation</a>
 	 */
-	public Order[] getOrders(String accountNumber, ZonedDateTime startTime, ZonedDateTime endTime) throws RefreshTokenException, StatusCodeException {
+	public Order[] getOrders(String accountNumber, ZonedDateTime startTime, ZonedDateTime endTime) throws RefreshTokenException {
 		return getOrders(accountNumber, startTime, endTime, null);
 	}
 	
-	/** Get all of the orders of an account in a given time period. Unsure if maximum of 31 days of data can be requested at a time, I didn't check.
+	/** Get all of the orders of an account in a given time period. A maximum of 30 days of data can be requested at a time.
 	 * You can specify the state of the orders to retrieve using the stateFilter parameter (All, Open, or Closed).
 	 * @param accountNumber The account for which to get the orders for.
 	 * @param startTime The beginning of the time period to get the orders for.
@@ -387,11 +410,16 @@ public class QuestradeAPI {
 	 * @param orderState The state of the order. See {@link Order.OrderState} for all possible values.
 	 * @return An {@code Order[]} array containing all of the {@link Order}s created in the time period.
 	 * @throws RefreshTokenException If the refresh token is invalid.
+	 * @throws ArgumentException If the request arguments are invalid.
 	 * @throws StatusCodeException If an error occurs when contacting the Questrade API.
 	 * @see <a href="https://www.questrade.com/api/documentation/rest-operations/account-calls/accounts-id-orders">
 	 * The Questrade API <b>GET accounts/:id/orders[/:orderId]</b> documentation</a>
 	 */
-	public Order[] getOrders(String accountNumber, ZonedDateTime startTime, ZonedDateTime endTime, OrderState orderState) throws RefreshTokenException, StatusCodeException {
+	public Order[] getOrders(String accountNumber, ZonedDateTime startTime, ZonedDateTime endTime, OrderState orderState) throws RefreshTokenException {
+		if(startTime.isAfter(endTime)) {
+			throw new TimeRangeException("The startTime must be earlier than the endTime.");
+		}
+		
 		String URL = authorization.getApiServer() + "v1/accounts/" + accountNumber + "/orders";
 		
 		Request request = new Request(URL);
@@ -417,7 +445,7 @@ public class QuestradeAPI {
 	 * @see <a href="https://www.questrade.com/api/documentation/rest-operations/account-calls/accounts-id-orders">
 	 * The Questrade API <b>GET accounts/:id/orders[/:orderId]</b> documentation</a>
 	 */
-	private Order[] finishGetOrders(Request request) throws StatusCodeException, RefreshTokenException {
+	private Order[] finishGetOrders(Request request) throws RefreshTokenException {
 		String ordersJSON = sendRequest(request);
 		Orders orders = new Gson().fromJson(ordersJSON, Orders.class);
 		return orders.orders;
@@ -430,11 +458,12 @@ public class QuestradeAPI {
 	 * @param accountNumber The account to get the positions for.
 	 * @return A {@code Position[]} array containing all of the corresponding {@link Position} objects.
 	 * @throws RefreshTokenException If the refresh token is invalid.
+	 * @throws ArgumentException If the request arguments are invalid.
 	 * @throws StatusCodeException If an error occurs when contacting the Questrade API.
 	 * @see <a href="https://www.questrade.com/api/documentation/rest-operations/account-calls/accounts-id-orders">
 	 * The Questrade API <b>GET accounts/:id/orders[/:orderId]</b> documentation</a>
 	 */
-	public Position[] getPositions(String accountNumber) throws StatusCodeException, RefreshTokenException {
+	public Position[] getPositions(String accountNumber) throws RefreshTokenException {
 		String URL = authorization.getApiServer() + "v1/accounts/" + accountNumber + "/positions";
 		
 		Request request = new Request(URL);
@@ -448,16 +477,24 @@ public class QuestradeAPI {
 		return positions.positions;
 	}
 	
+	private class Error {
+		private int code;
+		private String message;
+	}
+	
 	/** Sends the given request. If the access token expires during execution, it will automatically use the cached refresh token
 	 * to get a new access token and retry the request.
 	 * @param request The API request that contain contains the URL, parameters, request method, etc.
 	 * @return Usually a string in JSON format.
 	 * @throws RefreshTokenException If the refresh token is invalid.
+	 * @throws ArgumentException If the request arguments are invalid.
 	 * @throws StatusCodeException If an error occurs when contacting the Questrade API.
 	 */
-    private String sendRequest(Request request) throws RefreshTokenException, StatusCodeException {
+    private String sendRequest(Request request) throws RefreshTokenException {
 
         try {
+        	lastRequest = request.toString();
+        	
             HttpURLConnection connection = request.getConnection();
             
             int statusCode = connection.getResponseCode();
@@ -465,27 +502,34 @@ public class QuestradeAPI {
             // This exception is thrown when there's no internet (I'm guessing)
             //java.net.UnknownHostException
             
-            if(statusCode == 400) {
-            	throw new RefreshTokenException("Error code " + statusCode + " was returned. Assuming refresh token is invalid.");
+            // Response codes in the 200s are "successful"
+            if (statusCode > 299 || statusCode < 200) {
+            	
+            	BufferedReader in = new BufferedReader(new InputStreamReader(connection.getErrorStream()));
+            	String responseJSON = in.readLine();
+            	connection.disconnect();
+            	System.out.println(responseJSON);
+            	Error error = new Gson().fromJson(responseJSON, Error.class);
+     
+            	// Error code 1017 means access token is invalid or expired
+            	if(error.code == 1017) {
+            		retrieveAccessToken(authorization.getRefreshToken()); // get new access token
+            		request.setAccessToken(authorization.getAccessToken());
+            		return sendRequest(request);
+            	} else if (error.code == 1002 || error.code == 1003 || error.code == 1004) {
+            		throw new ArgumentException(error.message);
+            	}
+            	
+            	if(statusCode == 400) {
+            		throw new RefreshTokenException("Error code " + statusCode + " was returned. Assuming refresh token is invalid.");
+            	} 
+            	
+        		throw new StatusCodeException("A bad status code was returned: " + statusCode, statusCode);
             }
             
             BufferedReader in = new BufferedReader(new InputStreamReader(connection.getInputStream()));
             String responseJSON = in.readLine();
             connection.disconnect();
-            
-            // Response codes in the 200s are "successful"
-            if (statusCode > 299 || statusCode < 200) {
-            	int errorCode = new Gson().fromJson(responseJSON, int.class);
-            	
-            	// Error code 1017 means access token is invalid or expired
-            	if(errorCode == 1017) {
-            		retrieveAccessToken(authorization.getRefreshToken()); // get new access token
-            		request.setAccessToken(authorization.getAccessToken());
-            		return sendRequest(request);
-            	}
-            	
-            	throw new StatusCodeException("A bad status code was returned: " + statusCode, statusCode);
-            }
             
             return responseJSON;
             

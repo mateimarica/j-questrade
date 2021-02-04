@@ -1,10 +1,7 @@
 package com.jquestrade;
 
 import java.io.IOException;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
 import java.net.URL;
 
 class Request {
@@ -74,6 +71,11 @@ class Request {
 			
 		//System.out.println("URL = " + URL);
 		return connection;
+	}
+	
+	@Override
+	public String toString() {
+		return requestMethod + " " + URL;
 	}
 	
 		

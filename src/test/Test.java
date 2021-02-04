@@ -3,15 +3,11 @@ package test;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.PrintWriter;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.Scanner;
-import com.jquestrade.Account;
-import com.jquestrade.Authorization;
-import com.jquestrade.Balances;
-import com.jquestrade.Balances.Currency;
-import com.jquestrade.Position;
-import com.jquestrade.QuestradeAPI;
-import com.jquestrade.exceptions.RefreshTokenException;
-import com.jquestrade.exceptions.StatusCodeException;
+import com.jquestrade.*;
+import com.jquestrade.exceptions.*;
 
 class Test {
 
@@ -21,32 +17,41 @@ class Test {
 
 		QuestradeAPI q = new QuestradeAPI(refreshToken);
 		q.setAuthRelay(authorization -> saveToDatabase(authorization));
+		
+		ZonedDateTime t1 = ZonedDateTime.of(2020, 11, 1, 0, 0, 0, 0, ZoneId.of("GMT"));
+		ZonedDateTime t2 = ZonedDateTime.of(2020, 12, 1, 3, 0, 0, 0, ZoneId.of("GMT"));
 
 		try {
 			q.activate();
 			System.out.println(q.getAuthorization().getAccessTokenExpiry());
 			Account[] accounts = q.getAccounts();
 
-			Balances balances = q.getBalances(accounts[0].getNumber());
-			
-			System.out.println(balances.getPerCurrencyBalances(Currency.CAD).getTotalEquity());
-				
-			
-			Position[] positions = q.getPositions(accounts[0].getNumber());
+			/*Position[] positions = q.getPositions(accounts[0].getNumber());
 			
 			for(int i = 0; i < positions.length; i++) {
-				System.out.println(positions[i].getSymbol());
+				System.out.print(positions[i].getSymbol());
+				System.out.printf("\t%s\n", positions[i].getSymbolId());
+			}*/
+			
+			q.getExecutions(accounts[0].getNumber(), t1, t2);
+			
+			Activity[] activities = q.getActivities(accounts[0].getNumber(), t1, t2);
+			
+			for(int i = 0; i < activities.length; i++) {
+				System.out.println(activities[i].getDescription());
 			}
 			
 		} catch (RefreshTokenException e) {
 			System.out.println("Refresh token bad");
 			e.printStackTrace();
+			System.out.println(q.getLastRequest());
 		} catch (StatusCodeException e) {
 			System.out.println("Bad request. Status code: " + e.getStatusCode());
 			e.printStackTrace();
+		} catch (ArgumentException e) {
+			e.printStackTrace();
 		}
-
-
+		
 	}
 	
 	public static void saveToDatabase(Authorization e) {
