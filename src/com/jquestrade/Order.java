@@ -327,9 +327,10 @@ public class Order {
 		return placementCommission;
 	}
 	
-	/** No idea what this is
+	/** No idea what this is. Unimplemented
 	 * @return the legs
 	 */
+	@Deprecated
 	public Object[] getLegs() {
 		return legs;
 	}

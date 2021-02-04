@@ -74,4 +74,9 @@ public class Account {
 	public int getUserId() {
 		return userId;
 	}
+	
+	/** Must be default modifier. Set user id after creation. Called from {@link Questrade#getAccounts}*/
+	void setUserId(int userId) {
+		this.userId = userId;
+	}
 }

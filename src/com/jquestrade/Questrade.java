@@ -18,14 +18,14 @@ import com.jquestrade.exceptions.RefreshTokenException;
 import com.jquestrade.exceptions.StatusCodeException;
 import com.jquestrade.exceptions.TimeRangeException;
 
-/** The {@code QuestradeAPI} class represents the Questrade API. It contains methods for easily accessing the Questrade API,
+/** The {@code Questrade} class represents an Questrade API client. It contains methods for easily accessing the Questrade API,
  * such as retrieving the balances, positions, orders, market data, etc. It will also automatically retrieve a new access token
  * if the current access token expires during runtime.
  * @author Matei Marica
  * @see <a href="https://www.questrade.com/api">Questrade API documentation</a>
  */
-public class QuestradeAPI {
-	
+public class Questrade {
+
 	/** A string representation of the this object's last HTTP request. */
 	private String lastRequest;
 	
@@ -61,7 +61,7 @@ public class QuestradeAPI {
 	 * @see <a href="https://www.questrade.com/api/documentation/getting-started">
 	 * Instructions for getting a refresh token for your Questrade account.</a>
 	 */
-	public QuestradeAPI(String refreshToken) {
+	public Questrade(String refreshToken) {
 		this.startingRefreshToken = refreshToken;
 	}
 	
@@ -76,7 +76,7 @@ public class QuestradeAPI {
 	 * @see <a href="https://www.questrade.com/api/documentation/getting-started">
 	 * Instructions for getting a refresh token for your Questrade account.</a>
 	 */
-	public QuestradeAPI(String refreshToken, String accessToken, String apiServer) {
+	public Questrade(String refreshToken, String accessToken, String apiServer) {
 		this.startingAuthorization = new Authorization(refreshToken, accessToken, apiServer);
 	}
 	
@@ -94,7 +94,7 @@ public class QuestradeAPI {
 	 * @throws RefreshTokenException If the refresh token is invalid.
 	 * @throws StatusCodeException If an error occurs when contacting the Questrade API.
 	 * */
-	public QuestradeAPI activate() throws RefreshTokenException {
+	public Questrade activate() throws RefreshTokenException {
 		if(startingRefreshToken != null) {
 			retrieveAccessToken(startingRefreshToken);
 			startingRefreshToken = null;
@@ -181,7 +181,7 @@ public class QuestradeAPI {
 	 * @return A reference to the calling object, for optional method chaining.<br>
 	 * Example: {@code QuestradeApi q = new QuestradeAPI(token).setAuthRelay(function);}
 	 */
-	public QuestradeAPI setAuthRelay(Consumer<Authorization> authRelayFunction) {
+	public Questrade setAuthRelay(Consumer<Authorization> authRelayFunction) {
 		this.authRelayFunction = authRelayFunction;
 		return this;
 	}
@@ -209,8 +209,11 @@ public class QuestradeAPI {
 		return balance;
 	}
 	
-	/** Private class used for GSON parsing, only in {@link QuestradeAPI#getAccounts()} */
-	private class Accounts { private Account[] accounts; }
+	/** Class used for GSON parsing, only in {@link Questrade#getAccounts()} */
+	private class Accounts { 
+		private Account[] accounts; 
+		private int userId;
+	}
 	
 	/** Get all of the accounts for the associated Questrade account.
 	 * @return An {@code Account[]} array, containing all of the accounts.
@@ -229,6 +232,12 @@ public class QuestradeAPI {
 		String accountsJSON = sendRequest(request);
 		
 		Accounts accounts = new Gson().fromJson(accountsJSON, Accounts.class);
+
+		//Inject the userId into each account for easier access
+		for(int i = 0; i < accounts.accounts.length; i++) {
+			accounts.accounts[i].setUserId(accounts.userId);
+		}
+
 		return accounts.accounts;
 	}
 	
@@ -252,7 +261,7 @@ public class QuestradeAPI {
 		return ZonedDateTime.parse(timeISO);
 	}
 	
-	/** Private class used for GSON parsing, only in {@link QuestradeAPI#getActivities(String, ZonedDateTime, ZonedDateTime)} */
+	/** Private class used for GSON parsing, only in {@link Questrade#getActivities(String, ZonedDateTime, ZonedDateTime)} */
 	private class Activities { private Activity[] activities; }
 	
 	/** Get all of the activities of an account in a given time period. A maximum of 30 days of data can be requested at a time.
@@ -286,7 +295,7 @@ public class QuestradeAPI {
 		return activities.activities;
 	}	
 	
-	/** Private class used for GSON parsing, only in {@link QuestradeAPI#getExecutions(String, ZonedDateTime, ZonedDateTime)} */
+	/** Private class used for GSON parsing, only in {@link Questrade#getExecutions(String, ZonedDateTime, ZonedDateTime)} */
 	private class Executions { private Execution[] executions; }
 	
 	/** Get all of the executions of an account in a given time period. A maximum of 30 days of data can be requested at a time.
@@ -320,19 +329,17 @@ public class QuestradeAPI {
 		return executions.executions;
 	}	
 
-	/** A private method that both {@link #getOrders(String, int[])} and {@link #getOrders(String, int, int...)} funnel in to.
-	 * The order IDs are retrieved as integers from the Questrade API, so it only makes sense to have integer parameters for those two methods.
-	 * This method actually makes the order request.
+	/** Get all of the orders of an account in a given time period, using one or more order IDs.
+	 * Is equivalent to {@link #getOrders(String, int, int[])}
 	 * @param accountNumber The account to get the order information for.
 	 * @param orderIds An array containing all of the orders IDs to get information for.
 	 * @return An {@code Order[]} array containing all of the {@link Order} objects corresponding to the given order IDs.
 	 * @throws RefreshTokenException If the refresh token is invalid.
-	 * @throws ArgumentException If the request arguments are invalid.
 	 * @throws StatusCodeException If an error occurs when contacting the Questrade API.
 	 * @see <a href="https://www.questrade.com/api/documentation/rest-operations/account-calls/accounts-id-orders">
 	 * The Questrade API <b>GET accounts/:id/orders[/:orderId]</b> documentation</a>
 	 */
-	private Order[] getOrders(String accountNumber, String[] orderIds) throws RefreshTokenException {
+	public Order[] getOrders(String accountNumber, int[] orderIds) throws RefreshTokenException {
 		String URL = authorization.getApiServer() + "v1/accounts/" + accountNumber + "/orders";
 		
 		Request request = new Request(URL);
@@ -344,26 +351,7 @@ public class QuestradeAPI {
 	}
 	
 	/** Get all of the orders of an account in a given time period, using one or more order IDs.
-	 * @param accountNumber The account to get the order information for.
-	 * @param orderIds An array containing all of the orders IDs to get information for.
-	 * @return An {@code Order[]} array containing all of the {@link Order} objects corresponding to the given order IDs.
-	 * @throws RefreshTokenException If the refresh token is invalid.
-	 * @throws StatusCodeException If an error occurs when contacting the Questrade API.
-	 * @see <a href="https://www.questrade.com/api/documentation/rest-operations/account-calls/accounts-id-orders">
-	 * The Questrade API <b>GET accounts/:id/orders[/:orderId]</b> documentation</a>
-	 */
-	public Order[] getOrders(String accountNumber, int[] orderIds) throws RefreshTokenException {
-		String[] allOrderIds = new String[orderIds.length];
-	
-		//copy over orderIds array as string
-		for(int i = 0; i < orderIds.length; i++) {
-			allOrderIds[i] = orderIds[i] + "";
-		}
-		
-		return getOrders(accountNumber, allOrderIds);
-	}
-	
-	/** Get all of the orders of an account in a given time period, using one or more order IDs.<br><br>
+	 * Is equivalent to {@link #getOrders(String, int[])}<br><br>
 	 * 
 	 * Example usages:<br>
 	 * {@code getOrders(accountNumber, 11111111)}<br>
@@ -380,21 +368,19 @@ public class QuestradeAPI {
 	 * The Questrade API <b>GET accounts/:id/orders[/:orderId]</b> documentation</a>
 	 */
 	public Order[] getOrders(String accountNumber, int orderId, int ...orderIds) throws RefreshTokenException {
-		String[] allOrderIds = new String[orderIds.length + 1];
+		String URL = authorization.getApiServer() + "v1/accounts/" + accountNumber + "/orders";
 		
-		allOrderIds[0] = orderId + "";
+		Request request = new Request(URL);
+		request.setRequestMethod(RequestMethod.GET);
+		request.setAccessToken(authorization.getAccessToken());
+		request.addParameter("ids", orderIds);
 		
-		//copy over orderIds array
-		for(int i = 1; i <= orderIds.length; i++) {
-			allOrderIds[i] = orderIds[i-1] + "";
-		}
-		
-		return getOrders(accountNumber, allOrderIds);
+		return finishGetOrders(request);
 	}
 	
 	/** Get all of the orders of an account in a given time period. A maximum of 30 days of data can be requested at a time.
 	 * This will get all orders in the time period, whether still open or closed. 
-	 * To specify the state of the filter, use the {@link #getOrders(String, ZonedDateTime, ZonedDateTime, orderState)} method.
+	 * To specify the state of the filter, use the {@link #getOrders(String, ZonedDateTime, ZonedDateTime, OrderState)} method.
 	 * @param accountNumber The account for which to get the orders for.
 	 * @param startTime The beginning of the time period to get the orders for.
 	 * @param endTime The end of the time period to get the orders for. 
@@ -440,7 +426,7 @@ public class QuestradeAPI {
 		return finishGetOrders(request);
 	}
 	
-	/** Private class used for GSON parsing, only in {@link QuestradeAPI#finishGetOrders(Request)} */
+	/** Private class used for GSON parsing, only in {@link Questrade#finishGetOrders(Request)} */
 	private class Orders { private Order[] orders; }
 	
 	/** A private method that all {@code getOrders} methods eventually funnel in to. Method exists only to not have to repeat code.
@@ -457,7 +443,7 @@ public class QuestradeAPI {
 		return orders.orders;
 	}
 	
-	/** Private class used for GSON parsing, only in {@link QuestradeAPI#getPositions(String)} */
+	/** Private class used for GSON parsing, only in {@link Questrade#getPositions(String)} */
 	private class Positions { private Position[] positions; }
 	
 	/** Get all of the current positions for a given account.
@@ -483,7 +469,7 @@ public class QuestradeAPI {
 		return positions.positions;
 	}
 	
-	/** Private class used for GSON parsing, only in {@link QuestradeAPI#getCandles(int, ZonedDateTime, ZonedDateTime, Interval)} */
+	/** Private class used for GSON parsing, only in {@link Questrade#getCandles(int, ZonedDateTime, ZonedDateTime, Interval)} */
 	private class Candles { private Candle[] candles; }
 	
 	/** Returns historical market data in the form of OHLC candlesticks for a specified symbol.
@@ -520,6 +506,231 @@ public class QuestradeAPI {
 		return candles.candles;
 	}
 	
+	/** Private class used for GSON parsing, only in {@link Questrade#getMarkets()} */
+	private class Markets { private Market[] markets; }
+	
+	/** Retrieves information about supported markets.
+	 * @return An {@code Market[]} array containing all of the available {@link Market}s.
+	 * @throws RefreshTokenException If the refresh token is invalid.
+	 * @throws StatusCodeException If an error occurs when contacting the Questrade API.
+	 * @see <a href="https://www.questrade.com/api/documentation/rest-operations/market-calls/markets-candles-id">
+	 * The Questrade API <b>GET markets</b> documentation</a>
+	 */
+	public Market[] getMarkets() throws RefreshTokenException {
+		String URL = authorization.getApiServer() + "v1/markets";
+		
+		Request request = new Request(URL);
+		request.setRequestMethod(RequestMethod.GET);
+		request.setAccessToken(authorization.getAccessToken());
+		
+		String marketsJSON = sendRequest(request);
+		
+		Markets markets = new Gson().fromJson(marketsJSON, Markets.class);
+		
+		return markets.markets;
+	}
+	
+	/** Returns a search for a symbol containing basic information. This method is the same as calling
+	 * {@code searchSymbol(String, 0)}<br><br>
+	 * Example: If the {@code prefix} is {@code "BMO"}, the result set will contain basic information for 
+	 * {@code "BMO"}, {@code "BMO.PRJ.TO"}, etc (anything with {@code "BMO"} in it).
+	 * @param prefix The prefix of a symbol or any word in the description. Example: "AAPL" is a valid parameter.
+	 * @return A {code Symbol[]} object containing basic information about the symbol(s).
+	 * @throws RefreshTokenException If the refresh token is invalid.
+	 * @throws StatusCodeException If an error occurs when contacting the Questrade API.
+	 * @see <a href="https://www.questrade.com/api/documentation/rest-operations/market-calls/symbols-search">
+	 * The Questrade API <b>GET symbols/search</b> documentation</a>
+	 */
+	public Symbol[] searchSymbol(String prefix) throws RefreshTokenException {
+		return searchSymbol(prefix, 0);
+	}
+	
+	/** Private class used for GSON parsing, only in {@link Questrade#searchSymbol(String, int)} */
+	private class Symbols { private Symbol[] symbols; }
+	
+	/** Returns a search for a symbol containing basic information.<br><br>
+	 *  * Example: If the {@code prefix} is {@code "BMO"}, the result set will contain basic information for 
+	 * {@code "BMO"}, {@code "BMO.PRJ.TO"}, etc (anything with {@code "BMO"} in it).
+	 * @param prefix The prefix of a symbol or any word in the description. Example: "AAPL" is a valid parameter.
+	 * @param offset Offset in number of records from the beginning of a result set.
+	 * Example: If there would normally be 5 results in the resulting array, an offset of {@code 1}
+	 * would return 4 results (the 2nd to the 5th).
+	 * @return A {code Symbol[]} object containing basic information about the symbol(s).
+	 * @throws RefreshTokenException If the refresh token is invalid.
+	 * @throws StatusCodeException If an error occurs when contacting the Questrade API.
+	 * @see <a href="https://www.questrade.com/api/documentation/rest-operations/market-calls/symbols-search">
+	 * The Questrade API <b>GET symbols/search</b> documentation</a>
+	 */
+	public Symbol[] searchSymbol(String prefix, int offset) throws RefreshTokenException {
+		if(offset < 0) {
+			throw new ArgumentException("offset argument cannot be less than 0");
+		}
+		
+		String URL = authorization.getApiServer() + "v1/symbols/search";
+		
+		Request request = new Request(URL);
+		request.setRequestMethod(RequestMethod.GET);
+		request.setAccessToken(authorization.getAccessToken());
+		request.addParameter("prefix", prefix);
+		if(offset > 0) {
+			request.addParameter("offset", offset + "");
+		}
+		
+		String symbolsJSON = sendRequest(request);
+		
+		Symbols symbols = new Gson().fromJson(symbolsJSON, Symbols.class);
+		
+		return symbols.symbols;
+	}
+	
+	/** Returns detailed information for one or more specific symbols using their internal unique identifiers.
+	 * Is equivalent to {@link #getSymbol(int[])}
+	 * @param id The internal unique identifier for a symbol.
+	 * @param ids Optional parameter for if you want to get information for multiple symbols in the same request.
+	 * @return A {@code SymbolInfo[]} object containing information about the symbol(s).
+	 * @throws RefreshTokenException If the refresh token is invalid.
+	 * @throws StatusCodeException If an error occurs when contacting the Questrade API.
+	 * @see <a href="https://www.questrade.com/api/documentation/rest-operations/market-calls/symbols-id">
+	 * The Questrade API <b>GET symbols/:id</b> documentation</a>
+	 */
+	public SymbolInfo[] getSymbol(int id, int ...ids) throws RefreshTokenException {
+		String URL = authorization.getApiServer() + "v1/symbols";
+		
+		Request request = new Request(URL);
+		request.setRequestMethod(RequestMethod.GET);
+		request.setAccessToken(authorization.getAccessToken());
+		request.addParameter("ids", id, ids);
+		
+		return finishGetSymbol(request);
+	}
+	
+	/** Returns detailed information for one or more specific symbols using their internal unique identifiers.
+	 * Is equivalent to {@link #getSymbol(int, int[])}
+	 * @param ids The internal unique identifiers for one or more symbols.
+	 * @return A {@code SymbolInfo[]} object containing information about the symbol(s).
+	 * @throws RefreshTokenException If the refresh token is invalid.
+	 * @throws StatusCodeException If an error occurs when contacting the Questrade API.
+	 * @see <a href="https://www.questrade.com/api/documentation/rest-operations/market-calls/symbols-id">
+	 * The Questrade API <b>GET symbols/:id</b> documentation</a>
+	 */
+	public SymbolInfo[] getSymbol(int[] ids) throws RefreshTokenException {
+		String URL = authorization.getApiServer() + "v1/symbols";
+		
+		Request request = new Request(URL);
+		request.setRequestMethod(RequestMethod.GET);
+		request.setAccessToken(authorization.getAccessToken());
+		request.addParameter("ids", ids);
+		
+		return finishGetSymbol(request);
+	}
+	
+	/** Returns detailed information for one or more specific symbols using their symbol names.
+	 * Does the same thing as {@link #getSymbol(String[])}
+	 * @param name The name of the symbol. (Eg: "MSFT")
+	 * @param names Optional parameter for if you want to get information for multiple symbols in the same request.
+	 * @return A {@code SymbolInfo[]} object containing information about the symbol(s).
+	 * @throws RefreshTokenException If the refresh token is invalid.
+	 * @throws StatusCodeException If an error occurs when contacting the Questrade API.
+	 * @see <a href="https://www.questrade.com/api/documentation/rest-operations/market-calls/symbols-id">
+	 * The Questrade API <b>GET symbols/:id</b> documentation</a>
+	 */
+	public SymbolInfo[] getSymbol(String name, String ...names) throws RefreshTokenException {
+		String URL = authorization.getApiServer() + "v1/symbols";
+		
+		Request request = new Request(URL);
+		request.setRequestMethod(RequestMethod.GET);
+		request.setAccessToken(authorization.getAccessToken());
+		request.addParameter("names", name, names);
+		
+		return finishGetSymbol(request);
+	}
+	
+	/** Returns detailed information for one or more specific symbols using their symbol names.
+	 * Does the same thing as {@link Questrade#getSymbol(String, String[])}
+	 * @param names The names of the symbols. (Eg: "MSFT", "AAPL")
+	 * @return A {@code SymbolInfo[]} object containing information about the symbol(s).
+	 * @throws RefreshTokenException If the refresh token is invalid.
+	 * @throws StatusCodeException If an error occurs when contacting the Questrade API.
+	 * @see <a href="https://www.questrade.com/api/documentation/rest-operations/market-calls/symbols-id">
+	 * The Questrade API <b>GET symbols/:id</b> documentation</a>
+	 */
+	public SymbolInfo[] getSymbol(String[] names) throws RefreshTokenException {
+		String URL = authorization.getApiServer() + "v1/symbols";
+		
+		Request request = new Request(URL);
+		request.setRequestMethod(RequestMethod.GET);
+		request.setAccessToken(authorization.getAccessToken());
+		request.addParameter("names", names);
+		
+		return finishGetSymbol(request);
+	}
+	
+	/** Private class used for GSON parsing, only in {@link Questrade#finishGetOrders(Request)} */
+	private class SymbolInfos { private SymbolInfo[] symbols; }
+	
+	/** Helper method to cut down on code. All getSymbol() methods funnel into here. */
+	private SymbolInfo[] finishGetSymbol(Request request) throws RefreshTokenException {
+		String symbolInfosJSON = sendRequest(request);
+		SymbolInfos symbolsInfos = new Gson().fromJson(symbolInfosJSON, SymbolInfos.class);
+		return symbolsInfos.symbols;
+	}
+	
+	/** Private class used for GSON parsing, only in {@link Questrade#getQuote(int, int...)} */
+	private class Quotes { private Quote[] quotes; }
+	
+	/**Retrieves a single Level 1 market data quote for one or more symbols. Equivalent to calling
+	 * {@link #getQuote(int[])}<br><br>
+	 * <b>IMPORTANT NOTE:</b> The Questrade user needs to be subscribed to a real-time data package, 
+	 * to receive market quotes in real-time, otherwise call to get quote is considered snap quote and 
+	 * limit per market can be quickly reached. Without real-time data package, once limit is reached, the response 
+	 * will return delayed data. <b>(Please check "delay" parameter in response always)</b>
+	 * @param id The internal identifer of a symbol.
+	 * @param ids Optional parameter for adding more symbols to the same request.
+	 * @return A {@code Quote[]} array, each index containing the quote for each requested symbol.
+	 * @throws RefreshTokenException If the refresh token is invalid.
+	 * @throws StatusCodeException If an error occurs when contacting the Questrade API.
+	 * @see <a href="https://www.questrade.com/api/documentation/rest-operations/market-calls/markets-quotes-id">
+	 * The Questrade API <b>GET markets/quotes/:id</b> documentation</a>
+	 */
+	public Quote[] getQuote(int id, int ...ids) throws RefreshTokenException {
+		String URL = authorization.getApiServer() + "v1/markets/quotes";
+		
+		Request request = new Request(URL);
+		request.setRequestMethod(RequestMethod.GET);
+		request.setAccessToken(authorization.getAccessToken());
+		request.addParameter("ids", id, ids);
+		
+		String quotesJSON = sendRequest(request);
+		Quotes quotes = new Gson().fromJson(quotesJSON, Quotes.class);
+		return quotes.quotes;
+	}
+	
+	/**Retrieves a single Level 1 market data quote for one or more symbols. Equivalent to calling
+	 * {@link #getQuote(int, int[])}<br><br>
+	 * <b>IMPORTANT NOTE:</b> The Questrade user needs to be subscribed to a real-time data package, 
+	 * to receive market quotes in real-time, otherwise call to get quote is considered snap quote and 
+	 * limit per market can be quickly reached. Without real-time data package, once limit is reached, the response 
+	 * will return delayed data. <b>(Please check "delay" parameter in response always)</b>
+	 * @param ids The internal identifers of the symbols.
+	 * @return A {@code Quote[]} array, each index containing the quote for each requested symbol.
+	 * @throws RefreshTokenException If the refresh token is invalid.
+	 * @throws StatusCodeException If an error occurs when contacting the Questrade API.
+	 * @see <a href="https://www.questrade.com/api/documentation/rest-operations/market-calls/markets-quotes-id">
+	 * The Questrade API <b>GET markets/quotes/:id</b> documentation</a>
+	 */
+	public Quote[] getQuote(int[] ids) throws RefreshTokenException {
+		String URL = authorization.getApiServer() + "v1/markets/quotes";
+		
+		Request request = new Request(URL);
+		request.setRequestMethod(RequestMethod.GET);
+		request.setAccessToken(authorization.getAccessToken());
+		request.addParameter("ids", ids);
+		
+		String quotesJSON = sendRequest(request);
+		Quotes quotes = new Gson().fromJson(quotesJSON, Quotes.class);
+		return quotes.quotes;
+	}
+	
 	/** Represents an error response returned by the Questrade API servers. */
 	private class Error {
 		private int code;
@@ -535,10 +746,10 @@ public class QuestradeAPI {
 	 * @throws StatusCodeException If an error occurs when contacting the Questrade API.
 	 */
     private String sendRequest(Request request) throws RefreshTokenException {
-
+    	
         try {
         	lastRequest = request.toString();
-        	
+        	System.out.println(lastRequest);
             HttpURLConnection connection = request.getConnection();
             
             int statusCode = connection.getResponseCode();

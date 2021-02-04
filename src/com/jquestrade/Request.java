@@ -4,12 +4,13 @@ import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URL;
 
+/** Represents an HTTPS request. */
 class Request {
 	
-	/** Request method for the HTTP request */
-	class RequestMethod {
-		static final String GET = "GET";
-		static final String POST = "POST";
+	/** Request methods for the HTTP request */
+	enum RequestMethod {
+		GET, 
+		POST;
 	}
 	
 	private String accessToken;
@@ -26,8 +27,8 @@ class Request {
         this.URL = URL;
 	}
 	
-	void setRequestMethod(String requestMethod) {
-		this.requestMethod = requestMethod;
+	void setRequestMethod(RequestMethod requestMethod) {
+		this.requestMethod = requestMethod.name();
 	}
 	
 	void addParameter(String key, String[] values) {
@@ -41,7 +42,29 @@ class Request {
 		parameterCount++;
 	}
 	
+	void addParameter(String key, int[] values) {
+		URL += ((parameterCount == 0) ? "?" : "&")
+			+ key + "=" + values[0];
+		
+		for(int i = 1; i < values.length; i++) {
+			URL += "," + values[i];
+		}
+		
+		parameterCount++;
+	}
+	
 	void addParameter(String key, String value, String ...values) {
+		URL += ((parameterCount == 0) ? "?" : "&")
+			+ key + "=" + value;
+		
+		for(int i = 0; i < values.length; i++) {
+			URL += "," + values[i];
+		}
+		
+		parameterCount++;
+	}
+	
+	void addParameter(String key, int value, int ...values) {
 		URL += ((parameterCount == 0) ? "?" : "&")
 			+ key + "=" + value;
 		

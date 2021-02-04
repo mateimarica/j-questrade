@@ -7,41 +7,41 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.Scanner;
 import com.jquestrade.*;
-import com.jquestrade.Candle.Interval;
+import com.jquestrade.Balances.Currency;
 import com.jquestrade.exceptions.*;
 
 class Test {
 
 	public static void main(String[] args) throws FileNotFoundException {
-		
+
 		Scanner s = new Scanner(new File("C:\\Users\\Public\\token.txt"));
 
-		QuestradeAPI q = new QuestradeAPI(s.nextLine(), s.nextLine(), s.nextLine());
-		//QuestradeAPI q = new QuestradeAPI(s.nextLine());
-		q.setAuthRelay(authorization -> saveToDatabase(authorization));
+		Questrade q = new Questrade(s.nextLine(), s.nextLine(), s.nextLine());
+		//Questrade q = new Questrade(s.nextLine());
+		q.setAuthRelay(auth -> saveToDatabase(auth));
 		
-		ZonedDateTime t1 = ZonedDateTime.of(2020, 11, 1, 0, 0, 0, 0, ZoneId.of("GMT"));
-		ZonedDateTime t2 = ZonedDateTime.of(2020, 12, 1, 3, 0, 0, 0, ZoneId.of("GMT"));
-
+		final ZonedDateTime t1 = ZonedDateTime.of(2021, 01, 1, 0, 0, 0, 0, ZoneId.of("GMT"));
+		final ZonedDateTime t2 = ZonedDateTime.of(2021, 01, 31, 0, 0, 0, 0, ZoneId.of("GMT"));
+		
 		try {
 			q.activate();
-			System.out.println(q.getAuthorization().getAccessTokenExpiry());
-			Account[] accounts = q.getAccounts();
-
-			int symbolId = q.getPositions(accounts[0].getNumber())[2].getSymbolId();
-						
-			Candle[] candles = q.getCandles(symbolId, t1, t2, Interval.OneWeek);
 			
-			for(int i = 0; i < candles.length; i++) {
-				System.out.println(candles[i].getClose());
-				System.out.println(candles[i].getEnd());
-				System.out.println(candles[i].getHigh());
-				System.out.println(candles[i].getLow());
-				System.out.println(candles[i].getOpen());
-				System.out.println(candles[i].getStart());
-				System.out.println(candles[i].getVolume());
-				System.out.println(candles[i].getVWAP());
-				System.out.println("----------------------------------");
+			Account[] accs = q.getAccounts();
+
+			Activity[] acts = q.getActivities(accs[0].getNumber(), t1, t2);
+			
+			for(int i = 0 ; i < acts.length; i++) {
+				print(acts[i].getAction());
+				print(acts[i].getCommission());
+				print(acts[i].getCurrency());
+				print(acts[i].getDescription());
+				print(acts[i].getGrossAmount());
+				print(acts[i].getNetAmount());
+				print(acts[i].getPrice());
+				print(acts[i].getSettlementDate());
+				print(acts[i].getSymbol());
+				
+				print("------------------------------");
 			}
 			
 		} catch (RefreshTokenException e) {
@@ -51,8 +51,10 @@ class Test {
 		} catch (StatusCodeException e) {
 			System.out.println("Bad request. Status code: " + e.getStatusCode());
 			e.printStackTrace();
+			System.out.println(q.getLastRequest());
 		} catch (ArgumentException e) {
 			e.printStackTrace();	
+			System.out.println(q.getLastRequest());
 		}
 		
 	}
@@ -68,6 +70,10 @@ class Test {
 			e1.printStackTrace();
 		}
 		
+	}
+	
+	public static void print(Object a) {
+		System.out.println(a);
 	}
 
 }
