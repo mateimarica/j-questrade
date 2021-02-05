@@ -14,8 +14,15 @@ repositories {
     jcenter()
 }
 
-
 dependencies {
 	implementation 'com.google.code.gson:gson:2.8.6'
 }
 
+task javadocJar(type: Jar) {
+    classifier = 'javadoc'
+    from javadoc
+}   
+
+artifacts {
+    archives javadocJar
+}
