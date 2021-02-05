@@ -33,7 +33,7 @@ public class Quote {
 	private double low52w;
 	private double VWAP;
 	
-	/** Returns the symbol/ticker following Questrade’s symbology.
+	/** Returns the symbol/ticker following Questrade's symbology.
 	 * @return The symbol/ticker.
 	 */
 	public String getSymbol() {
