@@ -13,7 +13,7 @@ jQuestrade is a [Questrade API](https://www.questrade.com/api) wrapper written i
 
 ## Example Usage
 
-```
+```java
 Questrade q = new Questrade(refreshToken);
 
 try {
@@ -28,7 +28,7 @@ try {
 	// Get all orders for the first account in the last month
 	Order[] orders = q.getOrders(accs[0].getNumber(), startTime, endTime);
 	
-} catch(RefreshTokenException e) { 
+} catch (RefreshTokenException e) { 
 	e.printStackTrace();
 }
 ```
@@ -38,12 +38,12 @@ try {
 ## Installation
 ### Gradle:
 * Add the following into your `build.gradle` file:
-```
+```gradle
 repositories {
 	maven { url 'https://jitpack.io' }
 }
 ```
-```
+```gradle
 dependencies {
 	implementation 'com.github.mateimarica:j-questrade:v1.0'
 }
@@ -52,7 +52,7 @@ dependencies {
 
 ### Maven:
 * Add the following into your `pom.xml` file:
-```
+```xml
 <repositories>
 	<repository>
 		<id>jitpack.io</id>
@@ -60,8 +60,7 @@ dependencies {
 	</repository>
 </repositories>
 ```
-
-```
+```xml
 <dependency>
 	<groupId>com.github.mateimarica</groupId>
 	<artifactId>j-questrade</artifactId>
