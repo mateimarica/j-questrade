@@ -2,9 +2,25 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.jquestrade</groupId>
   <artifactId>jquestrade</artifactId>
-  <version>0.0.1-SNAPSHOT</version>
-  <name>Questrade API Wrapper</name>
-  <description>A Java library that wraps the Questrade API.</description>
+  <version>1.0</version>
+  <name>jQuestrade</name>
+  
+  <licenses>
+    <license>
+      <name>MIT License</name>
+      <url>https://github.com/mateimarica/j-questrade/blob/master/LICENSE</url>
+      <distribution>repo</distribution>
+    </license>
+  </licenses>
+  
+  <developers>
+        <developer>
+            <email>mmarica@unb.com</email>
+            <name>Marica Marica</name>
+            <url>https://github.com/mateimarica</url>
+            <id>mateimarica</id>
+        </developer>
+    </developers>
   
   <dependencies>
   	<dependency>
@@ -13,4 +29,6 @@
  		<version>2.8.6</version>
   	</dependency>
   </dependencies>
+  <url>https://github.com/mateimarica/j-questrade</url>
+  <description>A Questrade API wrapper written in Java.</description>
 </project>
