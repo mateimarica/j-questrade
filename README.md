@@ -17,7 +17,7 @@ jQuestrade is a [Questrade API](https://www.questrade.com/api) wrapper written i
 Questrade q = new Questrade(refreshToken);
 
 try {
-	q.activate(); // activate() must be called to make API requests
+	q.activate(); // This must be called before making API requests
 	
 	Account[] accs     = q.getAccounts();  // Get all accounts
 	ZonedDateTime time = q.getTime();      // Get server time
@@ -29,7 +29,7 @@ try {
 	Order[] orders = q.getOrders(accs[0].getNumber(), startTime, endTime);
 	
 } catch (RefreshTokenException e) { 
-	e.printStackTrace();
+	// Prompt user to enter another refresh token
 }
 ```
 
@@ -45,7 +45,7 @@ repositories {
 ```
 ```gradle
 dependencies {
-	implementation 'com.github.mateimarica:j-questrade:v1.0'
+	implementation 'com.github.mateimarica:j-questrade:1.1'
 }
 ```
 <br>
@@ -64,7 +64,7 @@ dependencies {
 <dependency>
 	<groupId>com.github.mateimarica</groupId>
 	<artifactId>j-questrade</artifactId>
-	<version>v1.0</version>
+	<version>1.1</version>
 </dependency>
 ```
 
