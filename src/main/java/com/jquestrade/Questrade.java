@@ -10,6 +10,7 @@ import java.util.function.Consumer;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonSyntaxException;
 import com.jquestrade.Candle.Interval;
 import com.jquestrade.Order.OrderState;
 import com.jquestrade.Request.RequestMethod;
@@ -749,7 +750,7 @@ public class Questrade {
     	
         try {
         	lastRequest = request.toString();
-        	System.out.println(lastRequest);
+
             HttpURLConnection connection = request.getConnection();
             
             int statusCode = connection.getResponseCode();
@@ -764,7 +765,13 @@ public class Questrade {
             	String responseJSON = in.readLine();
             	connection.disconnect();
 
-            	Error error = new Gson().fromJson(responseJSON, Error.class);
+            	//Extract error from response JSON
+            	Error error;
+            	try {
+            		error = new Gson().fromJson(responseJSON, Error.class);
+            	} catch (JsonSyntaxException e) {
+            		throw new RefreshTokenException("Error code " + statusCode + " was returned. Assuming refresh token is invalid.");
+            	}
      
             	// Error code 1017 means access token is invalid or expired
             	if(error.code == 1017) {
@@ -774,11 +781,7 @@ public class Questrade {
             	} else if (error.code == 1002 || error.code == 1003 || error.code == 1004) {
             		throw new ArgumentException(error.message);
             	}
-            	
-            	if(statusCode == 400) {
-            		throw new RefreshTokenException("Error code " + statusCode + " was returned. Assuming refresh token is invalid.");
-            	} 
-            	
+            	            	
         		throw new StatusCodeException("A bad status code was returned: " + statusCode, statusCode);
             }
             
