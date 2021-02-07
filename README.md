@@ -7,7 +7,8 @@ jQuestrade is a [Questrade API](https://www.questrade.com/api) wrapper written i
 
 ## Features
 * Automatic access token renewal
-* Authorization relaying
+* [Authorization relaying](https://github.com/mateimarica/j-questrade/wiki/Using-an-authorization-relay)
+* Interact with Questrade API responses as Java objects
 
 <br>
 
@@ -71,7 +72,8 @@ dependencies {
 <br>
 
 ## Documentation
-* [**Javadoc**](https://javadoc.jitpack.io/com/github/mateimarica/j-questrade/latest/javadoc/)
+* [Javadoc](https://javadoc.jitpack.io/com/github/mateimarica/j-questrade/latest/javadoc/)
+* [GitHub Wiki](https://github.com/mateimarica/j-questrade/wiki)
 
 <br>
 
