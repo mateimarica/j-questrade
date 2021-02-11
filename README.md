@@ -1,7 +1,7 @@
 # jQuestrade
 [![](https://jitpack.io/v/mateimarica/j-questrade.svg)](https://jitpack.io/#mateimarica/j-questrade)
 
-jQuestrade is a [Questrade API](https://www.questrade.com/api) wrapper written in Java. It aims to simplify access to Questrade's API..
+jQuestrade is a [Questrade API](https://www.questrade.com/api) wrapper written in Java. It aims to simplify access to Questrade's API.
 
 <br>
 
@@ -46,7 +46,7 @@ repositories {
 ```
 ```gradle
 dependencies {
-	implementation 'com.github.mateimarica:j-questrade:1.1'
+	implementation 'com.github.mateimarica:j-questrade:1.2'
 }
 ```
 <br>
@@ -65,7 +65,7 @@ dependencies {
 <dependency>
 	<groupId>com.github.mateimarica</groupId>
 	<artifactId>j-questrade</artifactId>
-	<version>1.1</version>
+	<version>1.2</version>
 </dependency>
 ```
 
@@ -77,6 +77,8 @@ dependencies {
 
 <br>
 
-## Disclaimer
+## Disclaimers
 
-This library is not affiliated, maintained, authorized, or endorsed by Questrade. Use at your own risk.
+* This library is not affiliated, maintained, authorized, or endorsed by Questrade.
+
+* This library has not been heavily tested. Use at your own risk.
