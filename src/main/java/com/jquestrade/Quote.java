@@ -12,7 +12,7 @@ public class Quote {
 	private Quote() {}
 	
 	private String symbol;
-	private int symbolId;
+	private long symbolId;
 	private String tier;
 	private double bidPrice;
 	private int bidSize;
@@ -43,7 +43,7 @@ public class Quote {
 	/** Returns the internal symbol identifier.
 	 * @return The internal symbol identifier.
 	 */
-	public int getSymbolId() {
+	public long getSymbolId() {
 		return symbolId;
 	}
 	

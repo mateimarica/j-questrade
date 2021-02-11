@@ -719,6 +719,7 @@ public class Questrade {
 		request.addParameter("ids", id, ids);
 		
 		String quotesJSON = sendRequest(request);
+
 		Quotes quotes = new Gson().fromJson(quotesJSON, Quotes.class);
 		return quotes.quotes;
 	}
@@ -801,8 +802,9 @@ public class Questrade {
             	} else if (error.code == 1002 || error.code == 1003 || error.code == 1004) {
             		throw new ArgumentException(error.message);
             	}
-            	            	
-        		throw new StatusCodeException("A bad status code was returned: " + statusCode, statusCode);
+              	
+        		throw new StatusCodeException("A bad status code was returned: " + statusCode 
+        				+ ". Reason: " + error.message, statusCode);
             }
             
             BufferedReader in = new BufferedReader(new InputStreamReader(connection.getInputStream()));
