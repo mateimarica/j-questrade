@@ -19,12 +19,15 @@ class Request {
 	
 	private String requestMethod = "GET";
 	
-	private String URL;
+	private String path;
 
 	private String contentType;
 	
-	Request(String URL) {
-        this.URL = URL;
+	private String apiServer;
+	
+
+	Request(String path) {
+        this.path = path;
 	}
 	
 	void setRequestMethod(RequestMethod requestMethod) {
@@ -32,44 +35,44 @@ class Request {
 	}
 	
 	void addParameter(String key, String[] values) {
-		URL += ((parameterCount == 0) ? "?" : "&")
+		path += ((parameterCount == 0) ? "?" : "&")
 			+ key + "=" + values[0];
 		
 		for(int i = 1; i < values.length; i++) {
-			URL += "," + values[i];
+			path += "," + values[i];
 		}
 		
 		parameterCount++;
 	}
 	
 	void addParameter(String key, int[] values) {
-		URL += ((parameterCount == 0) ? "?" : "&")
+		path += ((parameterCount == 0) ? "?" : "&")
 			+ key + "=" + values[0];
 		
 		for(int i = 1; i < values.length; i++) {
-			URL += "," + values[i];
+			path += "," + values[i];
 		}
 		
 		parameterCount++;
 	}
 	
 	void addParameter(String key, String value, String ...values) {
-		URL += ((parameterCount == 0) ? "?" : "&")
+		path += ((parameterCount == 0) ? "?" : "&")
 			+ key + "=" + value;
 		
 		for(int i = 0; i < values.length; i++) {
-			URL += "," + values[i];
+			path += "," + values[i];
 		}
 		
 		parameterCount++;
 	}
 	
 	void addParameter(String key, int value, int ...values) {
-		URL += ((parameterCount == 0) ? "?" : "&")
+		path += ((parameterCount == 0) ? "?" : "&")
 			+ key + "=" + value;
 		
 		for(int i = 0; i < values.length; i++) {
-			URL += "," + values[i];
+			path += "," + values[i];
 		}
 		
 		parameterCount++;
@@ -79,13 +82,25 @@ class Request {
 		this.contentType = contentType;
 	}
 
+	void setApiServer(String apiServer) {
+		this.apiServer = apiServer;
+	}
 	
 	void setAccessToken(String accessToken) {
 		this.accessToken = accessToken;
 	}
 	
 	HttpURLConnection getConnection() throws IOException {
-		HttpURLConnection connection = (HttpURLConnection) new URL(URL).openConnection();
+		String URL;
+		
+		if(apiServer != null) {
+			URL = apiServer + path;
+		} else {
+			URL = path;
+		}
+		
+		HttpURLConnection connection = 
+				(HttpURLConnection) new URL(URL).openConnection();
 		
 		if (accessToken != null) {
             connection.setRequestProperty("Authorization", "Bearer " + accessToken);
@@ -103,7 +118,7 @@ class Request {
 	
 	@Override
 	public String toString() {
-		return requestMethod + " " + URL;
+		return requestMethod + " " + (apiServer != null ? apiServer : "") + path;
 	}
 	
 		

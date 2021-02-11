@@ -140,9 +140,9 @@ public class Questrade {
 		request.setRequestMethod(RequestMethod.GET);
 		
 		String responseJSON = sendRequest(request);
-		
+
 		authorization = new Gson().fromJson(responseJSON, Authorization.class);
-		
+
 		if(authRelayFunction != null) {
 			authRelayFunction.accept(authorization);
 		}
@@ -198,11 +198,12 @@ public class Questrade {
 	 * The Questrade API <b>GET accounts/:id/balances</b> documentation</a>
 	 */
 	public Balances getBalances(String accountNumber) throws RefreshTokenException {
-		String URL = authorization.getApiServer() + "v1/accounts/" + accountNumber + "/balances";
+		String URL = "v1/accounts/" + accountNumber + "/balances";
 		
 		Request request = new Request(URL);
 		request.setAccessToken(authorization.getAccessToken());
 		request.setRequestMethod(RequestMethod.GET);
+		request.setApiServer(authorization.getApiServer());
 		
 		String balancesJSON = sendRequest(request);
 		
@@ -224,11 +225,12 @@ public class Questrade {
 	 * The Questrade API <b>GET accounts</b> documentation</a>
 	 */
 	public Account[] getAccounts() throws RefreshTokenException {
-		String URL = authorization.getApiServer() + "v1/accounts/";
+		String URL = "v1/accounts/";
 		
 		Request request = new Request(URL);
 		request.setAccessToken(authorization.getAccessToken());
 		request.setRequestMethod(RequestMethod.GET);
+		request.setApiServer(authorization.getApiServer());
 		
 		String accountsJSON = sendRequest(request);
 		
@@ -250,10 +252,11 @@ public class Questrade {
 	 * The Questrade API <b>GET time</b> documentation</a>
 	 */
 	public ZonedDateTime getTime() throws RefreshTokenException {
-		String URL = authorization.getApiServer() + "v1/time";
+		String URL = "v1/time";
 
 		Request request = new Request(URL);
 		request.setRequestMethod(RequestMethod.GET);
+		request.setApiServer(authorization.getApiServer());
 		request.setAccessToken(authorization.getAccessToken());
 		
 		String timeJSON = sendRequest(request);
@@ -281,10 +284,11 @@ public class Questrade {
 			throw new TimeRangeException("The startTime must be earlier than the endTime.");
 		}
 		
-		String URL = authorization.getApiServer() + "v1/accounts/" + accountNumber + "/activities";
+		String URL = "v1/accounts/" + accountNumber + "/activities";
 		
 		Request request = new Request(URL);
 		request.setRequestMethod(RequestMethod.GET);
+		request.setApiServer(authorization.getApiServer());
 		request.setAccessToken(authorization.getAccessToken());
 		request.addParameter("startTime", startTime.format(ISO_FORMATTER));
 		request.addParameter("endTime", endTime.format(ISO_FORMATTER));
@@ -315,11 +319,12 @@ public class Questrade {
 			throw new TimeRangeException("The startTime must be earlier than the endTime.");
 		}
 		
-		String URL = authorization.getApiServer() + "v1/accounts/" + accountNumber + "/executions";
+		String URL = "v1/accounts/" + accountNumber + "/executions";
 		
 		Request request = new Request(URL);
 		request.setRequestMethod(RequestMethod.GET);
 		request.setAccessToken(authorization.getAccessToken());
+		request.setApiServer(authorization.getApiServer());
 		request.addParameter("startTime", startTime.format(ISO_FORMATTER));
 		request.addParameter("endTime", endTime.format(ISO_FORMATTER));
 		
@@ -341,11 +346,12 @@ public class Questrade {
 	 * The Questrade API <b>GET accounts/:id/orders[/:orderId]</b> documentation</a>
 	 */
 	public Order[] getOrders(String accountNumber, int[] orderIds) throws RefreshTokenException {
-		String URL = authorization.getApiServer() + "v1/accounts/" + accountNumber + "/orders";
+		String URL = "v1/accounts/" + accountNumber + "/orders";
 		
 		Request request = new Request(URL);
 		request.setRequestMethod(RequestMethod.GET);
 		request.setAccessToken(authorization.getAccessToken());
+		request.setApiServer(authorization.getApiServer());
 		request.addParameter("ids", orderIds);
 		
 		return finishGetOrders(request);
@@ -369,10 +375,11 @@ public class Questrade {
 	 * The Questrade API <b>GET accounts/:id/orders[/:orderId]</b> documentation</a>
 	 */
 	public Order[] getOrders(String accountNumber, int orderId, int ...orderIds) throws RefreshTokenException {
-		String URL = authorization.getApiServer() + "v1/accounts/" + accountNumber + "/orders";
+		String URL = "v1/accounts/" + accountNumber + "/orders";
 		
 		Request request = new Request(URL);
 		request.setRequestMethod(RequestMethod.GET);
+		request.setApiServer(authorization.getApiServer());
 		request.setAccessToken(authorization.getAccessToken());
 		request.addParameter("ids", orderIds);
 		
@@ -413,13 +420,14 @@ public class Questrade {
 			throw new TimeRangeException("The startTime must be earlier than the endTime.");
 		}
 		
-		String URL = authorization.getApiServer() + "v1/accounts/" + accountNumber + "/orders";
+		String URL = "v1/accounts/" + accountNumber + "/orders";
 		
 		Request request = new Request(URL);
 		request.setRequestMethod(RequestMethod.GET);
 		request.setAccessToken(authorization.getAccessToken());
 		request.addParameter("startTime", startTime.format(ISO_FORMATTER));
 		request.addParameter("endTime", endTime.format(ISO_FORMATTER));
+		request.setApiServer(authorization.getApiServer());
 		if(orderState != null) {
 			request.addParameter("stateFilter", orderState.name());
 		}
@@ -457,10 +465,11 @@ public class Questrade {
 	 * The Questrade API <b>GET accounts/:id/orders[/:orderId]</b> documentation</a>
 	 */
 	public Position[] getPositions(String accountNumber) throws RefreshTokenException {
-		String URL = authorization.getApiServer() + "v1/accounts/" + accountNumber + "/positions";
+		String URL = "v1/accounts/" + accountNumber + "/positions";
 		
 		Request request = new Request(URL);
 		request.setRequestMethod(RequestMethod.GET);
+		request.setApiServer(authorization.getApiServer());
 		request.setAccessToken(authorization.getAccessToken());		
 		
 		String positionsJSON = sendRequest(request);
@@ -491,10 +500,11 @@ public class Questrade {
 			throw new TimeRangeException("The startTime must be earlier than the endTime.");
 		}
 		
-		String URL = authorization.getApiServer() + "v1/markets/candles/" + symbolId;
+		String URL = "v1/markets/candles/" + symbolId;
 		
 		Request request = new Request(URL);
 		request.setRequestMethod(RequestMethod.GET);
+		request.setApiServer(authorization.getApiServer());
 		request.setAccessToken(authorization.getAccessToken());
 		request.addParameter("startTime", startTime.format(ISO_FORMATTER));
 		request.addParameter("endTime", endTime.format(ISO_FORMATTER));
@@ -518,10 +528,11 @@ public class Questrade {
 	 * The Questrade API <b>GET markets</b> documentation</a>
 	 */
 	public Market[] getMarkets() throws RefreshTokenException {
-		String URL = authorization.getApiServer() + "v1/markets";
+		String URL = "v1/markets";
 		
 		Request request = new Request(URL);
 		request.setRequestMethod(RequestMethod.GET);
+		request.setApiServer(authorization.getApiServer());
 		request.setAccessToken(authorization.getAccessToken());
 		
 		String marketsJSON = sendRequest(request);
@@ -567,10 +578,11 @@ public class Questrade {
 			throw new ArgumentException("offset argument cannot be less than 0");
 		}
 		
-		String URL = authorization.getApiServer() + "v1/symbols/search";
+		String URL = "v1/symbols/search";
 		
 		Request request = new Request(URL);
 		request.setRequestMethod(RequestMethod.GET);
+		request.setApiServer(authorization.getApiServer());
 		request.setAccessToken(authorization.getAccessToken());
 		request.addParameter("prefix", prefix);
 		if(offset > 0) {
@@ -595,10 +607,11 @@ public class Questrade {
 	 * The Questrade API <b>GET symbols/:id</b> documentation</a>
 	 */
 	public SymbolInfo[] getSymbol(int id, int ...ids) throws RefreshTokenException {
-		String URL = authorization.getApiServer() + "v1/symbols";
+		String URL = "v1/symbols";
 		
 		Request request = new Request(URL);
 		request.setRequestMethod(RequestMethod.GET);
+		request.setApiServer(authorization.getApiServer());
 		request.setAccessToken(authorization.getAccessToken());
 		request.addParameter("ids", id, ids);
 		
@@ -615,10 +628,11 @@ public class Questrade {
 	 * The Questrade API <b>GET symbols/:id</b> documentation</a>
 	 */
 	public SymbolInfo[] getSymbol(int[] ids) throws RefreshTokenException {
-		String URL = authorization.getApiServer() + "v1/symbols";
+		String URL = "v1/symbols";
 		
 		Request request = new Request(URL);
 		request.setRequestMethod(RequestMethod.GET);
+		request.setApiServer(authorization.getApiServer());
 		request.setAccessToken(authorization.getAccessToken());
 		request.addParameter("ids", ids);
 		
@@ -636,10 +650,11 @@ public class Questrade {
 	 * The Questrade API <b>GET symbols/:id</b> documentation</a>
 	 */
 	public SymbolInfo[] getSymbol(String name, String ...names) throws RefreshTokenException {
-		String URL = authorization.getApiServer() + "v1/symbols";
+		String URL = "v1/symbols";
 		
 		Request request = new Request(URL);
 		request.setRequestMethod(RequestMethod.GET);
+		request.setApiServer(authorization.getApiServer());
 		request.setAccessToken(authorization.getAccessToken());
 		request.addParameter("names", name, names);
 		
@@ -656,10 +671,11 @@ public class Questrade {
 	 * The Questrade API <b>GET symbols/:id</b> documentation</a>
 	 */
 	public SymbolInfo[] getSymbol(String[] names) throws RefreshTokenException {
-		String URL = authorization.getApiServer() + "v1/symbols";
+		String URL = "v1/symbols";
 		
 		Request request = new Request(URL);
 		request.setRequestMethod(RequestMethod.GET);
+		request.setApiServer(authorization.getApiServer());
 		request.setAccessToken(authorization.getAccessToken());
 		request.addParameter("names", names);
 		
@@ -694,10 +710,11 @@ public class Questrade {
 	 * The Questrade API <b>GET markets/quotes/:id</b> documentation</a>
 	 */
 	public Quote[] getQuote(int id, int ...ids) throws RefreshTokenException {
-		String URL = authorization.getApiServer() + "v1/markets/quotes";
+		String URL = "v1/markets/quotes";
 		
 		Request request = new Request(URL);
 		request.setRequestMethod(RequestMethod.GET);
+		request.setApiServer(authorization.getApiServer());
 		request.setAccessToken(authorization.getAccessToken());
 		request.addParameter("ids", id, ids);
 		
@@ -720,10 +737,11 @@ public class Questrade {
 	 * The Questrade API <b>GET markets/quotes/:id</b> documentation</a>
 	 */
 	public Quote[] getQuote(int[] ids) throws RefreshTokenException {
-		String URL = authorization.getApiServer() + "v1/markets/quotes";
+		String URL = "v1/markets/quotes";
 		
 		Request request = new Request(URL);
 		request.setRequestMethod(RequestMethod.GET);
+		request.setApiServer(authorization.getApiServer());
 		request.setAccessToken(authorization.getAccessToken());
 		request.addParameter("ids", ids);
 		
@@ -775,9 +793,11 @@ public class Questrade {
      
             	// Error code 1017 means access token is invalid or expired
             	if(error.code == 1017) {
+
             		retrieveAccessToken(authorization.getRefreshToken()); // get new access token
-            		request.setAccessToken(authorization.getAccessToken());
-            		return sendRequest(request);
+            		request.setAccessToken(authorization.getAccessToken()); // set new access token
+            		request.setApiServer(authorization.getApiServer()); // set new api server
+            		return sendRequest(request); // resend fixed-up request
             	} else if (error.code == 1002 || error.code == 1003 || error.code == 1004) {
             		throw new ArgumentException(error.message);
             	}
