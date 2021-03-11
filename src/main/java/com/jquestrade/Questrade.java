@@ -107,22 +107,38 @@ public class Questrade {
 		return this;
 	}
 	
-	/** Doesn't work. Don't know why. <b>Do not use.</b>
-	 * @throws RefreshTokenException  If the refresh token is invalid.
-	 * @see <a href="ttps://www.questrade.com/api/documentation/security">
-	 * Revoking a token.</a>
+	/** Consumes the refresh token and any access tokens associated with it, invalidating them
+	 * so that the user will have to go and generate a new refresh token from Questrade. 
+	 * This method simply exchanges the refresh token for new tokens, but throws away the response,
+	 * essentially invalidating the old ones.
+	 * @param refreshToken The refresh token to consume
 	 */
-	/*@Deprecated
-	public void revokeAuthorization() throws RefreshTokenException {
-		String URL = "https://login.questrade.com/oauth2/revoke";
+	public void revokeAuthorization(String refreshToken) {
+		String URL = "https://login.questrade.com/oauth2/token?grant_type=refresh_token&refresh_token=" + refreshToken;
 		
 		Request request = new Request(URL);
-		request.addParameter("token", authorization.getRefreshToken());
-		request.setRequestMethod(RequestMethod.POST);
-		request.setContentType("application/x-www-form-urlencoded");
+		request.setRequestMethod(RequestMethod.GET);
 		
-		sendRequest(request);
-	}*/
+		try {
+			sendRequest(request);
+		} catch (RefreshTokenException e) {}
+	}
+	
+	/** Consumes this object's refresh and access token, invalidating them
+	 * so that the user will have to go and generate a new refresh token from Questrade. 
+	 * This method simply exchanges the refresh token for new tokens, but throws away the response,
+	 * essentially invalidating the old ones.
+	 */
+	public void revokeAuthorization() {
+		String URL = "https://login.questrade.com/oauth2/token?grant_type=refresh_token&refresh_token=" + authorization.getRefreshToken();
+		
+		Request request = new Request(URL);
+		request.setRequestMethod(RequestMethod.GET);
+		
+		try {
+			sendRequest(request);
+		} catch (RefreshTokenException e) {}
+	}
 	
 	/** Manually refresh the authorization (which includes the access token) with a given refresh token. Calling this function will save the resulting
 	 * {@link Authorization} object to be relayed to <i>authorization relay function</i> 

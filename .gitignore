@@ -4,4 +4,4 @@ bin
 target
 .project
 .classpath
-src/test
+src/test/java/App.java
