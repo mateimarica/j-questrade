@@ -63,11 +63,13 @@ dependencies {
 </repositories>
 ```
 ```xml
-<dependency>
-	<groupId>com.github.mateimarica</groupId>
-	<artifactId>j-questrade</artifactId>
-	<version>1.3</version>
-</dependency>
+<dependencies>
+	<dependency>
+		<groupId>com.github.mateimarica</groupId>
+		<artifactId>j-questrade</artifactId>
+		<version>1.3</version>
+	</dependency>
+</dependencies>
 ```
 
 <br>
