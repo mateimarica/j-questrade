@@ -47,7 +47,7 @@ repositories {
 ```
 ```gradle
 dependencies {
-	implementation 'com.github.mateimarica:j-questrade:1.3'
+	implementation 'com.github.mateimarica:j-questrade:1.4'
 }
 ```
 <br>
@@ -67,7 +67,7 @@ dependencies {
 	<dependency>
 		<groupId>com.github.mateimarica</groupId>
 		<artifactId>j-questrade</artifactId>
-		<version>1.3</version>
+		<version>1.4</version>
 	</dependency>
 </dependencies>
 ```
