@@ -75,7 +75,7 @@ dependencies {
 <br>
 
 ## Documentation
-* [Javadoc](https://javadoc.jitpack.io/com/github/mateimarica/j-questrade/latest/javadoc/)
+* [Javadoc](https://jquestrade.mateimarica.dev/javadoc/1.4/com/jquestrade/package-summary.html)
 * [GitHub Wiki](https://github.com/mateimarica/j-questrade/wiki)
 
 <br>
